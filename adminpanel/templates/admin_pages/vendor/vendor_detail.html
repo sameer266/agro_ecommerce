@@ -1,0 +1,487 @@
+{% extends 'components/base.html' %}
+
+
+{% block content %}
+<div class="mb-6">
+  <!-- Header with Back Button -->
+  <div class="flex items-center gap-3 mb-4">
+    <a href="{% url 'admin_vendor_list_page' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Back to Vendors
+    </a>
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-store text-blue-600"></i>
+        {{ vendor.shop_name }}
+      </h1>
+      <p class="text-sm text-gray-500">Vendor ID: #{{ vendor.id }} | Member since {{ vendor.created_at|date:"F d, Y" }}</p>
+    </div>
+  </div>
+
+  <!-- Status Badges -->
+  <div class="flex gap-3 mb-6">
+    <span class="badge {% if vendor.is_active %}badge-success{% else %}badge-danger{% endif %} text-base px-4 py-2">
+      <i class="fas fa-circle text-xs mr-1"></i>
+      {% if vendor.is_active %}Active{% else %}Inactive{% endif %}
+    </span>
+    <span class="badge {% if vendor.verification_status == 'verified' %}badge-success{% elif vendor.verification_status == 'rejected' %}badge-danger{% else %}badge-warning{% endif %} text-base px-4 py-2">
+      <i class="fas fa-shield-alt mr-1"></i>
+      {{ vendor.get_verification_status_display }}
+    </span>
+  </div>
+</div>
+
+<!-- Main Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  
+  <!-- Left Column - Main Info -->
+  <div class="lg:col-span-2 space-y-6">
+    
+    <!-- Basic Information Card -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fas fa-info-circle text-blue-600"></i>
+          Basic Information
+        </h2>
+        <a href="{% url 'admin_vendor_edit_page' vendor.id%}" class="btn btn-warning btn-sm">
+          <i class="fas fa-edit"></i> Edit
+        </a>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase">Shop Name</label>
+          <p class="text-base font-semibold text-gray-800 mt-1">{{ vendor.shop_name }}</p>
+        </div>
+        
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase">Owner Name</label>
+          <p class="text-base font-semibold text-gray-800 mt-1">{{ vendor.user.get_full_name|default:vendor.user.username }}</p>
+        </div>
+        
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase">Email</label>
+          <p class="text-base text-gray-800 mt-1">
+            <i class="fas fa-envelope text-gray-400 mr-1"></i>
+            {{ vendor.user.email }}
+          </p>
+        </div>
+        
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase">Phone</label>
+          <p class="text-base text-gray-800 mt-1">
+            <i class="fas fa-phone text-gray-400 mr-1"></i>
+            {{ vendor.phone }}
+          </p>
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="text-xs font-medium text-gray-500 uppercase">Description</label>
+          <p class="text-base text-gray-700 mt-1">{{ vendor.description|default:"No description provided" }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shop Logo Card -->
+    {% if vendor.shop_logo %}
+    <div class="card">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i class="fas fa-image text-purple-600"></i>
+        Shop Logo
+      </h2>
+      <div class="flex justify-center">
+        <img src="{{ vendor.shop_logo.url }}" alt="{{ vendor.shop_name }} Logo" class="max-w-xs h-auto rounded-lg border-2 border-gray-200">
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Location Information Card -->
+    <div class="card">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i class="fas fa-map-marker-alt text-red-600"></i>
+        Location Information
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase">Province</label>
+          <p class="text-base font-semibold text-gray-800 mt-1">{{ vendor.get_province_display }}</p>
+        </div>
+        
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase">City</label>
+          <p class="text-base font-semibold text-gray-800 mt-1">{{ vendor.city }}</p>
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="text-xs font-medium text-gray-500 uppercase">Full Address</label>
+          <p class="text-base text-gray-800 mt-1">
+            <i class="fas fa-home text-gray-400 mr-1"></i>
+            {{ vendor.address }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KYC Documents Card -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fas fa-file-alt text-purple-600"></i>
+          KYC Documents
+        </h2>
+        <div class="flex items-center gap-2">
+          <select class="form-control form-control-sm kyc-status-select" data-vendor-id="{{ vendor.id }}" style="width: auto; min-width: 140px;">
+            <option value="">Change Status...</option>
+            <option value="pending" {% if vendor.verification_status == 'pending' %}disabled{% endif %}>Pending</option>
+            <option value="verified" {% if vendor.verification_status == 'verified' %}disabled{% endif %}>Verified</option>
+            <option value="rejected" {% if vendor.verification_status == 'rejected' %}disabled{% endif %}>Rejected</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="space-y-4">
+        <!-- PAN Details -->
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+              <i class="fas fa-id-card text-indigo-600"></i>
+              PAN Document
+            </h3>
+            {% if vendor.pan_document %}
+            <a href="{{ vendor.pan_document.url }}" target="_blank" class="btn btn-info btn-sm">
+              <i class="fas fa-external-link-alt"></i> View
+            </a>
+            {% endif %}
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-500 uppercase">PAN Number</label>
+            <p class="text-base font-mono font-semibold text-gray-800 mt-1">{{ vendor.pan_number }}</p>
+          </div>
+        </div>
+
+        <!-- Rejection Reason (if rejected) -->
+        {% if vendor.verification_status == 'rejected' and vendor.rejection_reason %}
+        <div class="bg-red-50 border border-red-200 p-4 rounded-lg">
+          <h3 class="font-semibold text-red-800 mb-2 flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            Rejection Reason
+          </h3>
+          <p class="text-sm text-red-700">{{ vendor.rejection_reason }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Products Section -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fas fa-box-open text-orange-600"></i>
+          Products
+        </h2>
+        <a href="" class="btn btn-primary btn-sm">
+          <i class="fas fa-eye"></i> View All Products
+        </a>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Total Products -->
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-600 mb-1">Total Products</p>
+              <p class="text-2xl font-bold text-blue-700">{{ total_products }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-boxes text-white text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Available Products -->
+        <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-600 mb-1">Available</p>
+              <p class="text-2xl font-bold text-green-700">{{ total_available_products }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-check-circle text-white text-xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Column - Sidebar Info -->
+  <div class="space-y-6">
+    
+    <!-- Payment QR Code -->
+    {% if vendor.qr_image %}
+    <div class="card text-center">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-center gap-2">
+        <i class="fas fa-qrcode text-indigo-600"></i>
+        Payment QR Code
+      </h2>
+      <div class="flex justify-center mb-3">
+        <img src="{{ vendor.qr_image.url }}" alt="Payment QR" class="max-w-full h-auto rounded-lg border-2 border-gray-200" style="max-width: 200px;">
+      </div>
+      <a href="{{ vendor.qr_image.url }}" target="_blank" class="btn btn-info btn-sm">
+        <i class="fas fa-expand"></i> View Full Size
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Wallet Information -->
+    <div class="card">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i class="fas fa-wallet text-green-600"></i>
+        Wallet
+      </h2>
+      
+      <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200 mb-4">
+        <p class="text-sm text-gray-600 mb-2">Current Balance</p>
+        <p class="text-3xl font-bold text-green-700">Rs. {{ vendor.vendor_wallet.balance|floatformat:2 }}</p>
+        <p class="text-xs text-gray-500 mt-2">Last updated: {{ vendor.vendor_wallet.updated_at|date:"M d, Y h:i A" }}</p>
+      </div>
+
+      <a href="" class="btn btn-primary w-full">
+        <i class="fas fa-list"></i> View Transactions
+      </a>
+    </div>
+
+    <!-- Payout Requests -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <i class="fas fa-money-bill-wave text-blue-600"></i>
+          Payout Requests
+        </h2>
+      </div>
+      
+      <div class="space-y-3">
+        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-600 mb-1">Pending</p>
+              <p class="text-2xl font-bold text-yellow-700">{{ total_pending_payout_requests }}</p>
+            </div>
+            <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-hourglass-half text-white"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-600 mb-1">Completed</p>
+              <p class="text-2xl font-bold text-green-700">{{ total_paid_payout_requests }}</p>
+            </div>
+            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-check-circle text-white"></i>
+            </div>
+          </div>
+        </div>
+
+        <a href="" class="btn btn-info w-full btn-sm">
+          <i class="fas fa-history"></i> View History
+        </a>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i class="fas fa-clock text-purple-600"></i>
+        Timeline
+      </h2>
+      
+      <div class="space-y-4">
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-user-plus text-white text-xs"></i>
+            </div>
+            <div class="w-0.5 h-full bg-gray-300 mt-2"></div>
+          </div>
+          <div class="flex-1 pb-4">
+            <p class="font-semibold text-gray-800 text-sm">Registered</p>
+            <p class="text-xs text-gray-500">{{ vendor.created_at }}</p>
+          </div>
+        </div>
+
+        {% if vendor.verified_at %}
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-check-circle text-white text-xs"></i>
+            </div>
+            {% if vendor.selected_products.first.selected_at %}
+            <div class="w-0.5 h-full bg-gray-300 mt-2"></div>
+            {% endif %}
+          </div>
+          <div class="flex-1 pb-4">
+            <p class="font-semibold text-gray-800 text-sm">Verified</p>
+            <p class="text-xs text-gray-500">{{ vendor.verified_at|date:"F d, Y h:i A" }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if vendor.selected_products.first %}
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-box text-white text-xs"></i>
+            </div>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-800 text-sm">First Product Selected</p>
+            <p class="text-xs text-gray-500">{{ vendor.selected_products.first.selected_at|date:"F d, Y h:i A" }}</p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+$(document).ready(function() {
+  
+  // Change KYC Status API Call
+  function changeKYCStatus(vendorId, newStatus, reason = '') {
+    Swal.fire({
+      title: 'Processing...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    axios.post("{% url 'admin_vendor_kyc_change_api'%}", {
+      vendor_id: vendorId,
+      new_status: newStatus,
+      reason: reason
+    },{
+      headers: {
+        'X-CSRFToken': csrftoken
+      }
+    })
+    .then(function (response) {
+      const data = response.data;
+
+      if (data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: `KYC status updated to ${newStatus}`,
+          timer: 2000,
+          showConfirmButton: false
+        }).then(() => {
+          location.reload();
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: data.error || 'Failed to update KYC status'
+        });
+      }
+    })
+    .catch(function () {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: 'Network error. Please try again.'
+      });
+    });
+  }
+
+  // Handle KYC Status Change
+  $(document).on('change', '.kyc-status-select', function() {
+    const vendorId = $(this).data('vendor-id');
+    const newStatus = $(this).val();
+    const $select = $(this);
+
+    if (!newStatus) return;
+
+    if (newStatus === 'verified') {
+      Swal.fire({
+        title: 'Approve KYC?',
+        text: 'Are you sure you want to approve this vendor\'s KYC?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Approve'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(vendorId, 'verified');
+        } else {
+          $select.val('');
+        }
+      });
+    } else if (newStatus === 'rejected') {
+      Swal.fire({
+        title: 'Reject KYC',
+        input: 'textarea',
+        inputLabel: 'Rejection Reason',
+        inputPlaceholder: 'Enter reason for rejection...',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Reject',
+        inputValidator: (value) => {
+          if (!value) return 'Reason is required!';
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(vendorId, 'rejected', result.value);
+        } else {
+          $select.val('');
+        }
+      });
+    } else if (newStatus === 'pending') {
+      Swal.fire({
+        title: 'Set to Pending?',
+        text: 'Change KYC status back to pending?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Set to Pending'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(vendorId, 'pending');
+        } else {
+          $select.val('');
+        }
+      });
+    }
+  });
+
+});
+</script>
+{% endblock %}

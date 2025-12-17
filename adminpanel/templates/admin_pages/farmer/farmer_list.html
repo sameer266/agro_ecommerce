@@ -1,0 +1,425 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      <i class="fas fa-tractor text-green-600"></i>
+      Farmers
+     
+    </h1>
+    <p class="text-sm text-gray-500">Manage all registered farmers and their profiles</p>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <!-- Total Farmers -->
+  <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Total Farmers</p>
+        <h3 class="text-2xl font-bold text-blue-700">{{ total_farmers }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-users text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verified Farmers -->
+  <div class="card bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Verified</p>
+        <h3 class="text-2xl font-bold text-green-700">{{ total_verified }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-check-circle text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Verification -->
+  <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Pending</p>
+        <h3 class="text-2xl font-bold text-yellow-700">{{ total_pending }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-clock text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rejected -->
+  <div class="card bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Rejected</p>
+        <h3 class="text-2xl font-bold text-red-700">{{ total_rejected }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-times-circle text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card mb-4">
+  <div class="flex gap-5 items-end">
+    <div class="w-50">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Verification Status</label>
+      <select id="verificationFilter" class="form-control">
+        <option value="">All Status</option>
+        <option value="Pending Verification">Pending</option>
+        <option value="Verified">Verified</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+    <div class="w-50">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Province</label>
+      <select id="provinceFilter" class="form-control">
+        <option value="">All Provinces</option>
+        <option value="Koshi Province">Koshi Province</option>
+        <option value="Madhesh Province">Madhesh Province</option>
+        <option value="Bagmati Province">Bagmati Province</option>
+        <option value="Gandaki Province">Gandaki Province</option>
+        <option value="Lumbini Province">Lumbini Province</option>
+        <option value="Karnali Province">Karnali Province</option>
+        <option value="Sudurpashchim Province">Sudurpashchim Province</option>
+      </select>
+    </div>
+
+    <button id="resetBtn" class="btn btn-primary">
+      <i class="fas fa-redo"></i>
+      Reset
+    </button>
+  </div>
+</div>
+
+<!-- Farmers Table -->
+<div class="card">
+  <div class="overflow-x-auto">
+    <table id="farmersTable" class="table">
+      <thead>
+        <tr>
+          <th>Farmer ID</th>
+          <th>Farm Name</th>
+          <th>Owner</th>
+          <th>Location</th>
+          <th>Contact</th>
+          <th>Products</th>
+          <th>Wallet</th>
+          <th>QR</th>
+          <th>Registration Date</th>
+          <th>Verification</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for farmer in farmers %}
+        <tr data-farmer-id="{{ farmer.id }}">
+          <td class="font-medium text-primary">#{{ farmer.id }}</td>
+          <td>
+            <div class="font-medium">{{ farmer.farm_name }}</div>
+            {% if farmer.description %}
+            <div class="text-xs text-gray-500">{{ farmer.description|truncatewords:5 }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="font-medium">{{ farmer.user.get_full_name|default:farmer.user.username }}</div>
+            <div class="text-xs text-gray-500">{{ farmer.user.email }}</div>
+          </td>
+          <td>
+            <div>{{ farmer.city }}</div>
+            <div class="text-xs text-gray-500">{{ farmer.get_province_display }}</div>
+          </td>
+          <td>
+            <div>{{ farmer.phone }}</div>
+            <div class="text-xs text-gray-500">PAN: {{ farmer.pan_number }}</div>
+          </td>
+          <td class="text-center">
+            <a href="{% url 'admin_farmer_products_list' farmer.id %}" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800" title="View Products">
+              <i class="fas fa-box"></i>
+              <span class="font-medium">{{ farmer.farmer_products.count }}</span>
+            </a>
+          </td>
+          <td>
+            <div class="font-semibold text-green-600">Rs. {{ farmer.farmer_wallet.balance|floatformat:2 }}</div>
+            <a href="" class="text-xs text-blue-500 hover:underline">View Transactions</a>
+          </td>
+          <td>
+            {% if farmer.qr_image %}
+            <a href="{{ farmer.qr_image.url }}" target="_blank" class="text-blue-600 hover:underline">View QR</a>
+            {% else %}
+            <span class="text-gray-500 text-xs">No QR</span>
+            {% endif %}
+          <td>
+            <div>{{ farmer.created_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ farmer.created_at|time:"h:i A" }}</div>
+          </td>
+      
+          <td class="verification-status-{{ farmer.id }}">
+            <div class="flex items-center gap-2">
+              <span class="badge {% if farmer.verification_status == 'verified' %}badge-success{% elif farmer.verification_status == 'rejected' %}badge-danger{% else %}badge-warning{% endif %}">
+                {{ farmer.get_verification_status_display }}
+              </span>
+              <select class="form-control form-control-sm kyc-status-select" data-farmer-id="{{ farmer.id }}" style="width: auto; min-width: 120px;">
+                <option value="">Change Status</option>
+                <option value="pending" {% if farmer.verification_status == 'pending' %}disabled{% endif %}>Pending</option>
+                <option value="verified" {% if farmer.verification_status == 'verified' %}disabled{% endif %}>Verified</option>
+                <option value="rejected" {% if farmer.verification_status == 'rejected' %}disabled{% endif %}>Rejected</option>
+              </select>
+            </div>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <a href="{% url 'admin_farmer_details_page' farmer.id %}" class="btn btn-info btn-sm" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{% url 'admin_farmer_products_list' farmer.id %}" class="btn btn-success btn-sm" title="View Products">
+                <i class="fas fa-box"></i>
+              </a>
+              <a href="{% url 'admin_farmer_edit_page' farmer.id %}" class="btn btn-warning btn-sm" title="Edit">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'admin_farmer_delete' farmer.id %}" class="btn btn-danger btn-sm delete-farmer" data-name="{{ farmer.farm_name }}" title="Delete">
+                <i class="fas fa-trash"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="text-center text-gray-500 py-8">
+            <i class="fas fa-tractor text-4xl mb-2 text-gray-300"></i>
+            <p>No farmers found</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+</script>
+
+<script>
+$(document).ready(function() {
+  
+  // Initialize DataTable
+  const table = $('#farmersTable').DataTable({
+    pageLength: 25,
+    order: [[7, 'desc']],
+    language: {
+      emptyTable: "No farmers found",
+      info: "Showing _START_ to _END_ of _TOTAL_ farmers",
+      infoEmpty: "Showing 0 to 0 of 0 farmers",
+      infoFiltered: "(filtered from _MAX_ total farmers)",
+    },
+    columnDefs: [
+      { orderable: false, targets: [5, 9, 10] }
+    ]
+  });
+
+  // Filters
+  $('#verificationFilter').on('change', function() {
+    table.column(9).search(this.value).draw();
+  });
+
+  $('#provinceFilter').on('change', function() {
+    table.column(3).search(this.value).draw();
+  });
+
+
+
+  $('#resetBtn').on('click', function() {
+    $('#verificationFilter, #provinceFilter').val('');
+    table.search('').columns().search('').draw();
+  });
+
+  // Update KYC Status Display
+  function updateKYCStatus(farmerId, status) {
+    const badges = {
+      'verified': 'badge-success',
+      'rejected': 'badge-danger',
+      'pending': 'badge-warning'
+    };
+    
+    const displayText = {
+      'verified': 'Verified',
+      'rejected': 'Rejected',
+      'pending': 'Pending Verification'
+    };
+
+    // Update badge
+    const $statusCell = $(`.verification-status-${farmerId}`);
+    const $badge = $statusCell.find('.badge');
+    $badge.removeClass('badge-success badge-danger badge-warning').addClass(badges[status]);
+    $badge.text(displayText[status]);
+
+    // Update dropdown options
+    const $select = $statusCell.find('.kyc-status-select');
+    $select.find('option').prop('disabled', false);
+    $select.find(`option[value="${status}"]`).prop('disabled', true);
+    $select.val('');
+  }
+
+  // Change KYC Status API Call
+  function changeKYCStatus(farmerId, newStatus, reason = '') {
+    Swal.fire({
+      title: 'Processing...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    axios.post("{% url 'admin_farmer_kyc_change_api'%}", {
+      farmer_id: farmerId,
+      new_status: newStatus,
+      reason: reason
+    },{
+      headers: {
+        'X-CSRFToken': csrftoken
+      }
+    })
+    .then(function (response) {
+      const data = response.data;
+
+      if (data.success) {
+        updateKYCStatus(farmerId, newStatus);
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: `KYC status updated to ${newStatus}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: data.error || 'Failed to update KYC status'
+        });
+      }
+    })
+    .catch(function () {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: 'Network error. Please try again.'
+      });
+    });
+  }
+
+  // Handle KYC Status Change
+  $(document).on('change', '.kyc-status-select', function() {
+    const farmerId = $(this).data('farmer-id');
+    const newStatus = $(this).val();
+    const $select = $(this);
+
+    if (!newStatus) return;
+
+    if (newStatus === 'verified') {
+      Swal.fire({
+        title: 'Approve KYC?',
+        text: 'Are you sure you want to approve this farmer\'s KYC?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Approve'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(farmerId, 'verified');
+        } else {
+          $select.val('');
+        }
+      });
+    } else if (newStatus === 'rejected') {
+      Swal.fire({
+        title: 'Reject KYC',
+        input: 'textarea',
+        inputLabel: 'Rejection Reason',
+        inputPlaceholder: 'Enter reason for rejection...',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Reject',
+        inputValidator: (value) => {
+          if (!value) return 'Reason is required!';
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(farmerId, 'rejected', result.value);
+        } else {
+          $select.val('');
+        }
+      });
+    } else if (newStatus === 'pending') {
+      Swal.fire({
+        title: 'Set to Pending?',
+        text: 'Change KYC status back to pending?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Set to Pending'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(farmerId, 'pending');
+        } else {
+          $select.val('');
+        }
+      });
+    }
+  });
+
+  // Delete Farmer
+  $(document).on('click', '.delete-farmer', function(e) {
+    e.preventDefault();
+    const farmName = $(this).data('name');
+    const deleteUrl = $(this).attr('href');
+    
+    Swal.fire({
+      title: 'Delete Farmer?',
+      html: `Delete <strong>${farmName}</strong>?<br>This cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, Delete'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = deleteUrl;
+      }
+    });
+  });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,310 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-semibold text-gray-800 mb-2">{{ vendor.shop_name }} - Products</h1>
+  <p class="text-sm text-gray-500">Manage all products from this vendor</p>
+
+   <a href="javascript:void(0)" onclick="history.back()" class="btn btn-secondary">
+  <i class="fas fa-arrow-left"></i> Back
+</a>
+</div>
+
+<!-- Vendor Info Card -->
+<div class="card mb-4">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+        {% if vendor.shop_logo %}
+        <img src="{{ vendor.shop_logo.url }}" alt="{{ vendor.shop_name }}" class="w-16 h-16 rounded-full object-cover">
+        {% else %}
+        <i class="fas fa-store text-2xl text-primary"></i>
+        {% endif %}
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800">{{ vendor.shop_name }}</h3>
+        <p class="text-sm text-gray-600">{{ vendor.city }}, {{ vendor.get_province_display }}</p>
+        <p class="text-sm text-gray-500">Phone: {{ vendor.phone }}</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <span class="badge {% if vendor.verification_status == 'verified' %}badge-success{% elif vendor.verification_status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">
+        {{ vendor.get_verification_status_display }}
+      </span>
+    </div>
+  </div>
+</div>
+
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+  <div class="card">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-box text-xl text-blue-600"></i>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500">Total Products</p>
+        <p class="text-xl font-bold text-gray-800">{{ products.count }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-check-circle text-xl text-green-600"></i>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500">Available for Customers</p>
+        <p class="text-xl font-bold text-green-600">{{ products|length }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-warehouse text-xl text-yellow-600"></i>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500">Total Stock</p>
+        <p class="text-xl font-bold text-gray-800">
+          {% if aggregates.total_quantity %}{{ aggregates.total_quantity|floatformat:0 }}{% else %}0{% endif %} kg
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+        <i class="fas fa-money-bill-wave text-xl text-purple-600"></i>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500">Avg. Selling Price</p>
+        <p class="text-xl font-bold text-purple-600">
+          Rs. {% if aggregates.avg_price %}{{ aggregates.avg_price|floatformat:0 }}{% else %}0{% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card mb-4">
+  <div class="flex gap-3 items-end">
+    <div class="w-50">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Delivery Status</label>
+      <select id="deliveryFilter" class="form-control">
+        <option value="">All Status</option>
+        <option value="Selected">Selected</option>
+        <option value="In Transit">In Transit</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="w-50">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Availability</label>
+      <select id="availabilityFilter" class="form-control">
+        <option value="">All Products</option>
+        <option value="Available">Available</option>
+        <option value="Out of Stock">Out of Stock</option>
+        <option value="Not Available">Not Available</option>
+      </select>
+    </div>
+    <div class="w-50">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Customer Visibility</label>
+      <select id="visibilityFilter" class="form-control">
+        <option value="">All</option>
+        <option value="Visible">Visible to Customers</option>
+        <option value="Hidden">Hidden from Customers</option>
+      </select>
+    </div>
+    <button id="resetBtn" class="btn btn-primary">
+      <i class="fas fa-redo"></i>
+      Reset
+    </button>
+  </div>
+</div>
+
+<!-- Products Table -->
+<div class="card">
+  <div class="overflow-x-auto">
+    <table id="productsTable" class="table">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product</th>
+          <th>Farmer</th>
+          <th>Quality</th>
+          <th>Selected Qty</th>
+          <th>Available Qty</th>
+          <th>Base Price</th>
+          <th>Selling Price</th>
+          <th>Profit/Unit</th>
+          <th>Delivery Status</th>
+          <th>Customer Visibility</th>
+          <th>Selected Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td>
+            {% if product.farmer_product.image %}
+            <img src="{{ product.farmer_product.image.url }}" alt="{{ product.farmer_product.name }}" class="w-12 h-12 object-cover rounded">
+            {% else %}
+            <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+              <i class="fas fa-image text-gray-400"></i>
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="font-medium text-gray-800">{{ product.farmer_product.name }}</div>
+            {% if product.farmer_product.description %}
+            <div class="text-xs text-gray-500 max-w-xs truncate">{{ product.farmer_product.description }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="font-medium text-gray-700">{{ product.farmer_product.farmer.farm_name }}</div>
+            <div class="text-xs text-gray-500">{{ product.farmer_product.farmer.city }}</div>
+          </td>
+          <td>
+            <span class="badge {% if product.farmer_product.quality == 'A' %}badge-success{% elif product.farmer_product.quality == 'B' %}badge-warning{% else %}badge-secondary{% endif %}">
+              {{ product.farmer_product.get_quality_display }}
+            </span>
+          </td>
+          <td class="font-medium">{{ product.selected_quantity }} kg</td>
+          <td class="font-semibold {% if product.available_quantity > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+            {{ product.available_quantity }} kg
+          </td>
+          <td class="font-medium text-gray-600">Rs. {{ product.farmer_product.base_price|floatformat:2 }}</td>
+          <td class="font-semibold text-primary">Rs. {{ product.selling_price|floatformat:2 }}</td>
+          <td class="font-semibold text-green-600">
+            Rs. {{ product.vendor_profit|floatformat:2 }}
+          </td>
+          <td>
+            <span class="badge {% if product.delivery_status == 'delivered' %}badge-success{% elif product.delivery_status == 'in_transit' %}badge-info{% elif product.delivery_status == 'selected' %}badge-warning{% elif product.delivery_status == 'cancelled' %}badge-danger{% else %}badge-secondary{% endif %}">
+              {{ product.get_delivery_status_display }}
+            </span>
+          </td>
+          <td>
+            {% if product.is_available_for_customers %}
+            <span class="badge badge-success">
+              <i class="fas fa-eye"></i> Visible
+            </span>
+            {% else %}
+            <span class="badge badge-secondary">
+              <i class="fas fa-eye-slash"></i> Hidden
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="text-sm">{{ product.selected_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ product.selected_at|date:"h:i A" }}</div>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <a href="{% url 'admin_vendor_product_detail' product.id %}" class="btn btn-info btn-sm" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{% url 'admin_vendor_product_edit' product.id %}" class="btn btn-warning btn-sm" title="Edit">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'admin_vendor_product_delete' product.id %}" class="btn btn-danger btn-sm delete-btn" data-item-name="{{ product.farmer_product.name }}" title="Delete">
+                <i class="fas fa-trash"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="13" class="text-center text-gray-500 py-8">
+            <i class="fas fa-box-open text-4xl mb-2 text-gray-300"></i>
+            <p>No products found for this vendor</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize DataTable
+  const table = $('#productsTable').DataTable({
+    pageLength: 25,
+    order: [[11, 'desc']], // Sort by selected date column
+    language: {
+      emptyTable: "No products found",
+      info: "Showing _START_ to _END_ of _TOTAL_ products",
+      infoEmpty: "Showing 0 to 0 of 0 products",
+      infoFiltered: "(filtered from _MAX_ total products)",
+      paginate: {
+        first: "First",
+        last: "Last",
+        next: "Next",
+        previous: "Prev"
+      }
+    },
+    columnDefs: [
+      { orderable: false, targets: [0, 12] } // Disable sorting for image and actions columns
+    ]
+  });
+
+  // Delivery status filter
+  $('#deliveryFilter').on('change', function() {
+    const value = this.value;
+    table.column(9).search(value).draw();
+  });
+
+  // Availability filter
+  $('#availabilityFilter').on('change', function() {
+    const value = this.value;
+    if (value === 'Available') {
+      table.column(5).search('^(?!0)', true, false).draw();
+    } else if (value === 'Out of Stock') {
+      table.column(5).search('^0', true, false).draw();
+    } else if (value === 'Not Available') {
+      table.column(10).search('Hidden').draw();
+    } else {
+      table.column(5).search('').draw();
+      table.column(10).search('').draw();
+    }
+  });
+
+  // Visibility filter
+  $('#visibilityFilter').on('change', function() {
+    const value = this.value;
+    table.column(10).search(value).draw();
+  });
+
+  // Reset filters
+  $('#resetBtn').on('click', function() {
+    $('#deliveryFilter').val('');
+    $('#availabilityFilter').val('');
+    $('#visibilityFilter').val('');
+    table.search('').columns().search('').draw();
+  });
+
+  // Delete confirmation
+  $('.delete-btn').on('click', function(e) {
+    e.preventDefault();
+    const itemName = $(this).data('item-name');
+    const deleteUrl = $(this).attr('href');
+    
+    if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+      window.location.href = deleteUrl;
+    }
+  });
+});
+</script>
+{% endblock %}

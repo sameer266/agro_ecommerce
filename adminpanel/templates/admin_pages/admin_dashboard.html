@@ -1,0 +1,423 @@
+{% extends "components/base.html" %}
+
+
+{% block extra_css %}
+<style>
+  .stat-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .stat-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .icon-box {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .table-container {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  
+  <!-- Page Header -->
+  <div>
+    <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
+    <p class="text-sm text-gray-600 mt-1">Overview of your agro commerce platform</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Total Revenue -->
+    <div class="stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Total Revenue</p>
+          <p class="text-2xl font-semibold text-gray-900 mt-1">Rs. {{ total_revenue|floatformat:2 }}</p>
+          <p class="text-xs {% if revenue_change >= 0 %}text-green-600{% else %}text-red-600{% endif %} mt-1">
+            <i class="fas fa-arrow-{% if revenue_change >= 0 %}up{% else %}down{% endif %}"></i> {{ revenue_change|floatformat:1 }}% from last month
+          </p>
+        </div>
+        <div class="icon-box bg-green-100">
+          <i class="fas fa-rupee-sign text-green-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Orders -->
+    <div class="stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Total Orders</p>
+          <p class="text-2xl font-semibold text-gray-900 mt-1">{{ total_orders }}</p>
+          <p class="text-xs {% if orders_change >= 0 %}text-blue-600{% else %}text-red-600{% endif %} mt-1">
+            <i class="fas fa-arrow-{% if orders_change >= 0 %}up{% else %}down{% endif %}"></i> {{ orders_change|floatformat:1 }}% from last month
+          </p>
+        </div>
+        <div class="icon-box bg-blue-100">
+          <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Farmers -->
+    <div class="stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Active Farmers</p>
+          <p class="text-2xl font-semibold text-gray-900 mt-1">{{ active_farmers }}</p>
+          <p class="text-xs text-orange-600 mt-1">
+            <i class="fas fa-arrow-up"></i> {{ new_farmers_this_month }} new this month
+          </p>
+        </div>
+        <div class="icon-box bg-orange-100">
+          <i class="fas fa-tractor text-orange-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Vendors -->
+    <div class="stat-card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600">Active Vendors</p>
+          <p class="text-2xl font-semibold text-gray-900 mt-1">{{ active_vendors }}</p>
+          <p class="text-xs text-purple-600 mt-1">
+            <i class="fas fa-arrow-up"></i> {{ new_vendors_this_month }} new this month
+          </p>
+        </div>
+        <div class="icon-box bg-purple-100">
+          <i class="fas fa-store text-purple-600 text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Recent Orders -->
+    <div class="lg:col-span-2 table-container">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Orders</h2>
+          <a href="" class="text-sm text-primary hover:text-primary-dark">View all</a>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for order in recent_orders %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">#{{ order.order_number }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ order.full_name }}</td>
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">Rs. {{ order.total|floatformat:2 }}</td>
+              <td class="px-6 py-4">
+                {% if order.status == 'delivered' %}
+                  <span class="status-badge bg-green-100 text-green-700">Delivered</span>
+                {% elif order.status == 'processing' %}
+                  <span class="status-badge bg-blue-100 text-blue-700">Processing</span>
+                {% elif order.status == 'shipped' %}
+                  <span class="status-badge bg-yellow-100 text-yellow-700">Shipped</span>
+                {% elif order.status == 'cancelled' %}
+                  <span class="status-badge bg-red-100 text-red-700">Cancelled</span>
+                {% else %}
+                  <span class="status-badge bg-gray-100 text-gray-700">Pending</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">{{ order.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-gray-500">No orders yet</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pending Actions -->
+    <div class="space-y-4">
+      
+      <!-- Payout Requests -->
+      <div class="table-container">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Payout Requests</h3>
+        </div>
+        <div class="p-6 space-y-4">
+          {% for request in farmer_payout_requests %}
+          <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+              <div class="icon-box bg-orange-100" style="width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-tractor text-orange-600"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">{{ request.farmer.farm_name }}</p>
+                <p class="text-xs text-gray-600">Rs. {{ request.requested_amount|floatformat:2 }}</p>
+              </div>
+            </div>
+            <span class="status-badge bg-yellow-100 text-yellow-700">Pending</span>
+          </div>
+          {% endfor %}
+          
+          {% for request in vendor_payout_requests %}
+          <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+              <div class="icon-box bg-purple-100" style="width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-store text-purple-600"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">{{ request.vendor.shop_name }}</p>
+                <p class="text-xs text-gray-600">Rs. {{ request.requested_amount|floatformat:2 }}</p>
+              </div>
+            </div>
+            <span class="status-badge bg-yellow-100 text-yellow-700">Pending</span>
+          </div>
+          {% endfor %}
+          
+          {% if not farmer_payout_requests and not vendor_payout_requests %}
+          <p class="text-sm text-gray-500 text-center py-4">No pending requests</p>
+          {% endif %}
+        </div>
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+          <a href="" class="text-sm text-primary hover:text-primary-dark font-medium">View all requests →</a>
+        </div>
+      </div>
+
+      <!-- Verification Pending -->
+      <div class="table-container">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Pending Verifications</h3>
+        </div>
+        <div class="p-6 space-y-3">
+          {% if pending_farmers > 0 %}
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ pending_farmers }} Farmer{% if pending_farmers > 1 %}s{% endif %}</p>
+              <p class="text-xs text-gray-600">Awaiting KYC verification</p>
+            </div>
+            <a href="" class="btn-primary text-xs py-2 px-3">
+              Review
+            </a>
+          </div>
+          {% endif %}
+          
+          {% if pending_vendors > 0 %}
+          <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ pending_vendors }} Vendor{% if pending_vendors > 1 %}s{% endif %}</p>
+              <p class="text-xs text-gray-600">Awaiting KYC verification</p>
+            </div>
+            <a href="" class="btn-primary text-xs py-2 px-3">
+              Review
+            </a>
+          </div>
+          {% endif %}
+          
+          {% if pending_farmers == 0 and pending_vendors == 0 %}
+          <p class="text-sm text-gray-500 text-center py-4">All caught up!</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Admin Wallet -->
+      <div class="table-container">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Admin Wallet</h3>
+        </div>
+        <div class="p-6">
+          <div class="text-center">
+            <p class="text-sm text-gray-600">Total Commission</p>
+            <p class="text-3xl font-semibold text-gray-900 mt-2">Rs. {{ admin_wallet.balance|floatformat:2 }}</p>
+            <p class="text-xs text-green-600 mt-2">
+              <i class="fas fa-arrow-up"></i> Rs. {{ recent_commission|floatformat:2 }} this month
+            </p>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-center">
+            <div>
+              <p class="text-xs text-gray-600">Farmer Comm.</p>
+              <p class="text-sm font-semibold text-gray-900 mt-1">Rs. {{ farmer_commission|floatformat:2 }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-600">Vendor Comm.</p>
+              <p class="text-sm font-semibold text-gray-900 mt-1">Rs. {{ vendor_commission|floatformat:2 }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Recent Audit Logs & Bottom Stats -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Recent Audit Logs -->
+    <div class="lg:col-span-2 table-container">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+          <a href="" class="text-sm text-primary hover:text-primary-dark">View all</a>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for log in recent_logs %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-{% if log.user.role.role == 'farmer' %}green{% elif log.user.role.role == 'vendor' %}purple{% elif log.user.role.role == 'admin' %}red{% else %}blue{% endif %}-100 flex items-center justify-center">
+                    <i class="fas fa-{% if log.user.role.role == 'admin' %}user-shield{% else %}user{% endif %} text-{% if log.user.role.role == 'farmer' %}green{% elif log.user.role.role == 'vendor' %}purple{% elif log.user.role.role == 'admin' %}red{% else %}blue{% endif %}-600 text-xs"></i>
+                  </div>
+                  <span class="text-sm text-gray-900">{{ log.user.get_full_name|default:log.user.username }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                {% if log.action == 'product_added' %}
+                  <span class="status-badge bg-green-100 text-green-700">
+                    <i class="fas fa-plus-circle"></i> Product Added
+                  </span>
+                {% elif log.action == 'vendor_selected' %}
+                  <span class="status-badge bg-blue-100 text-blue-700">
+                    <i class="fas fa-check-circle"></i> Vendor Selected
+                  </span>
+                {% elif log.action == 'order_placed' %}
+                  <span class="status-badge bg-orange-100 text-orange-700">
+                    <i class="fas fa-shopping-cart"></i> Order Placed
+                  </span>
+                {% elif log.action == 'payout_requested' %}
+                  <span class="status-badge bg-yellow-100 text-yellow-700">
+                    <i class="fas fa-money-bill-wave"></i> Payout Requested
+                  </span>
+                {% elif log.action == 'payout_approved' %}
+                  <span class="status-badge bg-green-100 text-green-700">
+                    <i class="fas fa-check-double"></i> Payout Approved
+                  </span>
+                {% elif log.action == 'delivery_updated' %}
+                  <span class="status-badge bg-purple-100 text-purple-700">
+                    <i class="fas fa-truck"></i> Delivery Updated
+                  </span>
+                {% else %}
+                  <span class="status-badge bg-gray-100 text-gray-700">
+                    <i class="fas fa-info-circle"></i> {{ log.get_action_display }}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">{{ log.description|truncatewords:10 }}</td>
+              <td class="px-6 py-4 text-sm text-gray-600">{{ log.created_at|timesince }} ago</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="px-6 py-8 text-center text-gray-500">No activity yet</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bottom Stats -->
+    <div class="space-y-4">
+      <div class="stat-card">
+        <div class="flex items-center gap-3">
+          <div class="icon-box bg-green-100">
+            <i class="fas fa-leaf text-green-600"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600">Farmer Products</p>
+            <p class="text-xl font-semibold text-gray-900">{{ farmer_products }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center gap-3">
+          <div class="icon-box bg-blue-100">
+            <i class="fas fa-box text-blue-600"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600">Vendor Products</p>
+            <p class="text-xl font-semibold text-gray-900">{{ vendor_products }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center gap-3">
+          <div class="icon-box bg-purple-100">
+            <i class="fas fa-users text-purple-600"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600">Total Customers</p>
+            <p class="text-xl font-semibold text-gray-900">{{ total_customers }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="flex items-center gap-3">
+          <div class="icon-box bg-red-100">
+            <i class="fas fa-tags text-red-600"></i>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600">Categories</p>
+            <p class="text-xl font-semibold text-gray-900">{{ total_categories }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+

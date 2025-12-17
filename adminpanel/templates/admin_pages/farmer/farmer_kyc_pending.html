@@ -1,0 +1,686 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      <i class="fas fa-user-check text-yellow-600"></i>
+      Farmer KYC Verification
+    </h1>
+    <p class="text-sm text-gray-500">Review and approve pending farmer verification requests</p>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 mb-6">
+  <!-- Total Pending -->
+  <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Total Pending</p>
+        <h3 class="text-2xl font-bold text-yellow-700">{{ total_kyc_pending }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-clock text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<!-- Filter Card -->
+<div class="card mb-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Province</label>
+      <select id="provinceFilter" class="form-control">
+        <option value="">All Provinces</option>
+        <option value="Koshi Province">Koshi Province</option>
+        <option value="Madhesh Province">Madhesh Province</option>
+        <option value="Bagmati Province">Bagmati Province</option>
+        <option value="Gandaki Province">Gandaki Province</option>
+        <option value="Lumbini Province">Lumbini Province</option>
+        <option value="Karnali Province">Karnali Province</option>
+        <option value="Sudurpashchim Province">Sudurpashchim Province</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">City</label>
+      <input type="text" id="cityFilter" class="form-control" placeholder="Search city...">
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Farm Name</label>
+      <input type="text" id="farmNameFilter" class="form-control" placeholder="Search farm...">
+    </div>
+    <div class="flex items-end">
+      <button id="resetBtn" class="btn btn-primary w-full">
+        <i class="fas fa-redo"></i>
+        Reset Filters
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Farmers Table -->
+<div class="card">
+  <div class="overflow-x-auto">
+    <table id="farmersTable" class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Farm Details</th>
+          <th>Owner</th>
+          <th>Location</th>
+          <th>Contact</th>
+          <th>Documents</th>
+          <th>Submitted</th>
+          <th>KYC Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for farmer in farmers %}
+        <tr class="kyc-row-{{ farmer.id }}" data-farmer-id="{{ farmer.id }}">
+          <td class="font-medium text-primary">#{{ farmer.id }}</td>
+          
+          <!-- Farm Details -->
+          <td>
+            <div class="font-medium">{{ farmer.farm_name }}</div>
+            {% if farmer.description %}
+            <div class="text-xs text-gray-500 max-w-xs">{{ farmer.description|truncatewords:8 }}</div>
+            {% endif %}
+          </td>
+          
+          <!-- Owner -->
+          <td>
+            <div class="font-medium">{{ farmer.user.get_full_name }}</div>
+            <div class="text-xs text-gray-500">{{ farmer.user.email }}</div>
+            <div class="text-xs text-gray-400">ID: #{{ farmer.user.id }}</div>
+          </td>
+          
+          <!-- Location -->
+          <td>
+            <div class="font-medium">{{ farmer.city }}</div>
+            <div class="text-xs text-gray-500">{{ farmer.get_province_display }}</div>
+          </td>
+          
+          <!-- Contact -->
+          <td>
+            <div class="flex items-center gap-1 text-sm">
+              <i class="fas fa-phone text-xs text-gray-400"></i>
+              <span>{{ farmer.phone }}</span>
+            </div>
+          </td>
+          
+          <!-- Documents -->
+          <td>
+            <div class="flex flex-col gap-1">
+              <button class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1" onclick="viewAllDocuments({{ farmer.id }}, '{{ farmer.farm_name|escapejs }}', '{{ farmer.user.get_full_name|default:farmer.user.username|escapejs }}', '{{ farmer.user.email|escapejs }}', '{{ farmer.phone|escapejs }}', '{{ farmer.address|escapejs }}', '{{ farmer.city|escapejs }}', '{{ farmer.get_province_display|escapejs }}', '{{ farmer.pan_number|escapejs }}', '{% if farmer.pan_document %}{{ farmer.pan_document.url }}{% endif %}', '{% if farmer.citizenship_number %}{{ farmer.citizenship_number }}{% endif %}', '{% if farmer.citizenship_front %}{{ farmer.citizenship_front.url }}{% endif %}', '{% if farmer.citizenship_back %}{{ farmer.citizenship_back.url }}{% endif %}', '{% if farmer.qr_image %}{{ farmer.qr_image.url }}{% endif %}')">
+                <i class="fas fa-folder-open"></i>
+                View All Documents
+              </button>
+              <div class="flex gap-2 text-xs">
+                <span class="badge badge-info">PAN: {{ farmer.pan_number }}</span>
+                {% if farmer.citizenship_number %}
+                <span class="badge badge-success">CIT: {{ farmer.citizenship_number }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          
+          <!-- Submitted -->
+          <td>
+            <div class="text-sm">{{ farmer.created_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ farmer.created_at|time:"h:i A" }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ farmer.created_at|timesince }} ago</div>
+          </td>
+          
+          <!-- KYC Status -->
+          <td class="kyc-status-cell-{{ farmer.id }}">
+            <div class="flex flex-col gap-2">
+              <span class="badge badge-warning w-fit">
+                <i class="fas fa-clock"></i>
+                {{ farmer.get_verification_status_display }}
+              </span>
+              <select class="form-control text-xs kyc-status-select" data-farmer-id="{{ farmer.id }}" data-farmer-name="{{ farmer.farm_name }}" style="min-width: 120px;">
+                <option value="">Change Status</option>
+                <option value="verified">Approve</option>
+                <option value="rejected">Reject</option>
+              </select>
+            </div>
+          </td>
+          
+          <!-- Actions -->
+          <td>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <button class="btn btn-success btn-sm quick-approve-btn" data-farmer-id="{{ farmer.id }}" data-farmer-name="{{ farmer.farm_name }}" title="Quick Approve">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="btn btn-danger btn-sm quick-reject-btn" data-farmer-id="{{ farmer.id }}" data-farmer-name="{{ farmer.farm_name }}" title="Quick Reject">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center text-gray-500 py-8">
+            <i class="fas fa-clipboard-check text-4xl mb-2 text-gray-300"></i>
+            <p class="font-medium">No pending KYC verification requests</p>
+            <p class="text-xs mt-1">All farmers have been verified!</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- All Documents Modal -->
+<div id="allDocumentsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-lg max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+      <h3 class="text-lg sm:text-xl font-semibold">KYC Documents Review</h3>
+      <button onclick="closeAllDocumentsModal()" class="text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <!-- Modal Content -->
+    <div class="p-4 sm:p-6 overflow-auto flex-1" id="allDocumentsContent">
+      <!-- Content will be loaded here -->
+    </div>
+    
+    <!-- Modal Footer -->
+    <div class="flex flex-col sm:flex-row gap-3 justify-end p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0">
+      <button onclick="closeAllDocumentsModal()" class="btn btn-primary order-3 sm:order-1">
+        <i class="fas fa-times"></i> Close
+      </button>
+      <button id="modalApproveBtn" class="btn btn-success order-1 sm:order-2">
+        <i class="fas fa-check"></i> Approve KYC
+      </button>
+      <button id="modalRejectBtn" class="btn btn-danger order-2 sm:order-3">
+        <i class="fas fa-ban"></i> Reject KYC
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Current farmer ID for modal actions
+let currentFarmerId = null;
+let currentFarmerName = null;
+
+// View All Documents Function
+function viewAllDocuments(farmerId, farmName, ownerName, email, phone, address, city, province, panNumber, panDoc, citizenshipNumber, citizenshipFront, citizenshipBack, qrImage) {
+  currentFarmerId = farmerId;
+  currentFarmerName = farmName;
+  
+  let documentsHtml = `
+    <div class="space-y-6">
+      <!-- Farmer Information -->
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-lg border border-blue-200">
+        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-blue-900">
+          <i class="fas fa-user-circle text-blue-600"></i>
+          Farmer Information
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-white p-3 rounded">
+            <p class="text-xs text-gray-500 mb-1">Farm Name</p>
+            <p class="font-medium text-gray-900">${farmName}</p>
+          </div>
+          <div class="bg-white p-3 rounded">
+            <p class="text-xs text-gray-500 mb-1">Owner Name</p>
+            <p class="font-medium text-gray-900">${ownerName}</p>
+          </div>
+          <div class="bg-white p-3 rounded">
+            <p class="text-xs text-gray-500 mb-1">Email</p>
+            <p class="font-medium text-gray-900 break-all">${email}</p>
+          </div>
+          <div class="bg-white p-3 rounded">
+            <p class="text-xs text-gray-500 mb-1">Phone</p>
+            <p class="font-medium text-gray-900">${phone}</p>
+          </div>
+          <div class="bg-white p-3 rounded sm:col-span-2">
+            <p class="text-xs text-gray-500 mb-1">Address</p>
+            <p class="font-medium text-gray-900">${address}</p>
+          </div>
+          <div class="bg-white p-3 rounded">
+            <p class="text-xs text-gray-500 mb-1">City</p>
+            <p class="font-medium text-gray-900">${city}</p>
+          </div>
+          <div class="bg-white p-3 rounded">
+            <p class="text-xs text-gray-500 mb-1">Province</p>
+            <p class="font-medium text-gray-900">${province}</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- PAN Document -->
+      <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-lg border border-purple-200">
+        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-purple-900">
+          <i class="fas fa-file-invoice text-purple-600"></i>
+          PAN Document
+        </h4>
+        <div class="bg-white p-4 rounded">
+          <div class="mb-3">
+            <span class="text-sm text-gray-600">PAN Number:</span>
+            <span class="font-mono font-bold text-lg ml-2 text-purple-700">${panNumber}</span>
+          </div>`;
+  
+  if (panDoc) {
+    if (panDoc.toLowerCase().endsWith('.pdf')) {
+      documentsHtml += `
+        <div class="border border-gray-300 rounded-lg overflow-hidden">
+          <iframe src="${panDoc}" class="w-full h-[400px] sm:h-[500px]"></iframe>
+        </div>
+        <a href="${panDoc}" target="_blank" class="btn btn-primary btn-sm mt-3 inline-flex">
+          <i class="fas fa-external-link-alt"></i> Open PDF in New Tab
+        </a>`;
+    } else {
+      documentsHtml += `
+        <div class="border border-gray-300 rounded-lg overflow-hidden">
+          <img src="${panDoc}" class="w-full h-auto" alt="PAN Document">
+        </div>`;
+    }
+  } else {
+    documentsHtml += `<p class="text-gray-500 italic py-4">No PAN document uploaded</p>`;
+  }
+  documentsHtml += `</div></div>`;
+  
+  // Citizenship Documents
+  if (citizenshipNumber) {
+    documentsHtml += `
+      <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-lg border border-green-200">
+        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-green-900">
+          <i class="fas fa-id-card text-green-600"></i>
+          Citizenship Documents
+        </h4>
+        <div class="bg-white p-4 rounded">
+          <div class="mb-4">
+            <span class="text-sm text-gray-600">Citizenship Number:</span>
+            <span class="font-mono font-bold text-lg ml-2 text-green-700">${citizenshipNumber}</span>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">`;
+    
+    if (citizenshipFront) {
+      documentsHtml += `
+        <div>
+          <p class="text-sm font-semibold mb-2 text-gray-700">Front Side</p>
+          <div class="border border-gray-300 rounded-lg overflow-hidden">
+            <img src="${citizenshipFront}" class="w-full h-auto" alt="Citizenship Front">
+          </div>
+        </div>`;
+    }
+    
+    if (citizenshipBack) {
+      documentsHtml += `
+        <div>
+          <p class="text-sm font-semibold mb-2 text-gray-700">Back Side</p>
+          <div class="border border-gray-300 rounded-lg overflow-hidden">
+            <img src="${citizenshipBack}" class="w-full h-auto" alt="Citizenship Back">
+          </div>
+        </div>`;
+    }
+    
+    documentsHtml += `</div></div></div>`;
+  }
+  
+  // QR Image
+  if (qrImage) {
+    documentsHtml += `
+      <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 sm:p-6 rounded-lg border border-amber-200">
+        <h4 class="font-semibold text-lg mb-4 flex items-center gap-2 text-amber-900">
+          <i class="fas fa-qrcode text-amber-600"></i>
+          Payment QR Code
+        </h4>
+        <div class="bg-white p-4 rounded flex justify-center">
+          <img src="${qrImage}" class="max-w-full sm:max-w-xs h-auto border border-gray-300 rounded-lg" alt="Payment QR">
+        </div>
+      </div>`;
+  }
+  
+  documentsHtml += `</div>`;
+  
+  document.getElementById('allDocumentsContent').innerHTML = documentsHtml;
+  
+  const modal = document.getElementById('allDocumentsModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  
+  // Prevent body scroll
+  document.body.style.overflow = 'hidden';
+}
+
+// Close All Documents Modal
+function closeAllDocumentsModal() {
+  const modal = document.getElementById('allDocumentsModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  currentFarmerId = null;
+  currentFarmerName = null;
+  
+  // Restore body scroll
+  document.body.style.overflow = '';
+}
+
+// Update KYC Status Display
+function updateKYCStatus(farmerId, status) {
+  const badges = {
+    'verified': 'badge-success',
+    'rejected': 'badge-danger',
+    'pending': 'badge-warning'
+  };
+  
+  const icons = {
+    'verified': 'fa-check-circle',
+    'rejected': 'fa-times-circle',
+    'pending': 'fa-clock'
+  };
+  
+  const displayText = {
+    'verified': 'Verified',
+    'rejected': 'Rejected',
+    'pending': 'Pending'
+  };
+
+  const $statusCell = $(`.kyc-status-cell-${farmerId}`);
+  const $badge = $statusCell.find('.badge');
+  $badge.removeClass('badge-success badge-danger badge-warning').addClass(badges[status]);
+  $badge.html(`<i class="fas ${icons[status]}"></i> ${displayText[status]}`);
+
+  const $select = $statusCell.find('.kyc-status-select');
+  $select.val('');
+}
+
+// Change KYC Status API Call
+function changeKYCStatus(farmerId, newStatus, farmerName, reason = '') {
+  Swal.fire({
+    title: 'Processing...',
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  axios.post("{% url 'admin_farmer_kyc_change_api' %}", {
+    farmer_id: farmerId,
+    new_status: newStatus,
+    reason: reason
+  }, {
+    headers: {
+      'X-CSRFToken': csrftoken
+    }
+  })
+  .then(function(response) {
+    const data = response.data;
+    
+    if (data.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        html: `<strong>${farmerName}</strong> KYC ${newStatus === 'verified' ? 'approved' : 'rejected'} successfully!`,
+        timer: 2000,
+        showConfirmButton: false
+      }).then(() => {
+        // Remove row from table
+        $(`.kyc-row-${farmerId}`).fadeOut(300, function() {
+          $(this).remove();
+          
+          // Update count
+          const currentCount = parseInt($('.text-yellow-700').first().text());
+          if (currentCount > 0) {
+            $('.text-yellow-700').first().text(currentCount - 1);
+          }
+          
+          // Check if table is empty
+          if ($('#farmersTable tbody tr:visible').length === 0) {
+            $('#farmersTable tbody').html(`
+              <tr>
+                <td colspan="9" class="text-center text-gray-500 py-8">
+                  <i class="fas fa-clipboard-check text-4xl mb-2 text-gray-300"></i>
+                  <p class="font-medium">No pending KYC verification requests</p>
+                  <p class="text-xs mt-1">All farmers have been verified!</p>
+                </td>
+              </tr>
+            `);
+          }
+        });
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: data.error || 'Failed to update KYC status'
+      });
+    }
+  })
+  .catch(function(error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error!',
+      text: 'Network error. Please try again.'
+    });
+  });
+}
+
+$(document).ready(function() {
+  // Initialize DataTable
+  const table = $('#farmersTable').DataTable({
+    pageLength: 25,
+    order: [[6, 'desc']],
+    responsive: true,
+    language: {
+      emptyTable: "No pending KYC verification requests",
+      info: "Showing _START_ to _END_ of _TOTAL_ farmers",
+      infoEmpty: "Showing 0 to 0 of 0 farmers",
+      infoFiltered: "(filtered from _MAX_ total farmers)",
+    },
+    columnDefs: [
+      { orderable: false, targets: [5, 7, 8] }
+    ]
+  });
+
+  // Province filter
+  $('#provinceFilter').on('change', function() {
+    table.column(3).search(this.value).draw();
+  });
+
+  // City filter
+  $('#cityFilter').on('keyup', function() {
+    table.column(3).search(this.value).draw();
+  });
+
+  // Farm name filter
+  $('#farmNameFilter').on('keyup', function() {
+    table.column(1).search(this.value).draw();
+  });
+
+  // Reset filters
+  $('#resetBtn').on('click', function() {
+    $('#provinceFilter, #cityFilter, #farmNameFilter').val('');
+    table.search('').columns().search('').draw();
+  });
+
+  // Handle KYC Status Change from dropdown
+  $(document).on('change', '.kyc-status-select', function() {
+    const farmerId = $(this).data('farmer-id');
+    const farmerName = $(this).data('farmer-name');
+    const newStatus = $(this).val();
+    const $select = $(this);
+
+    if (!newStatus) return;
+
+    if (newStatus === 'verified') {
+      Swal.fire({
+        title: 'Approve KYC?',
+        html: `Approve KYC verification for <strong>${farmerName}</strong>?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, Approve'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(farmerId, 'verified', farmerName);
+        } else {
+          $select.val('');
+        }
+      });
+    } else if (newStatus === 'rejected') {
+      Swal.fire({
+        title: 'Reject KYC',
+        html: `Reject KYC verification for <strong>${farmerName}</strong>?`,
+        input: 'textarea',
+        inputLabel: 'Rejection Reason (Required)',
+        inputPlaceholder: 'Enter detailed reason for rejection...',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Reject',
+        inputValidator: (value) => {
+          if (!value) return 'Reason is required!';
+          if (value.length < 10) return 'Please provide a detailed reason (at least 10 characters)';
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          changeKYCStatus(farmerId, 'rejected', farmerName, result.value);
+        } else {
+          $select.val('');
+        }
+      });
+    }
+  });
+
+  // Quick Approve Button
+  $(document).on('click', '.quick-approve-btn', function() {
+    const farmerId = $(this).data('farmer-id');
+    const farmerName = $(this).data('farmer-name');
+    
+    Swal.fire({
+      title: 'Quick Approve',
+      html: `Approve KYC for <strong>${farmerName}</strong>?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, Approve'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        changeKYCStatus(farmerId, 'verified', farmerName);
+      }
+    });
+  });
+
+  // Quick Reject Button
+  $(document).on('click', '.quick-reject-btn', function() {
+    const farmerId = $(this).data('farmer-id');
+    const farmerName = $(this).data('farmer-name');
+    
+    Swal.fire({
+      title: 'Reject KYC',
+      html: `Reject KYC for <strong>${farmerName}</strong>?`,
+      input: 'textarea',
+      inputLabel: 'Rejection Reason (Required)',
+      inputPlaceholder: 'Enter detailed reason...',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Reject',
+      inputValidator: (value) => {
+        if (!value) return 'Reason is required!';
+        if (value.length < 10) return 'Please provide a detailed reason';
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        changeKYCStatus(farmerId, 'rejected', farmerName, result.value);
+      }
+    });
+  });
+
+  // Modal Approve Button
+  $(document).on('click', '#modalApproveBtn', function() {
+    if (!currentFarmerId) return;
+    
+    closeAllDocumentsModal();
+    
+    Swal.fire({
+      title: 'Approve KYC?',
+      html: `Approve KYC for <strong>${currentFarmerName}</strong>?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, Approve'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        changeKYCStatus(currentFarmerId, 'verified', currentFarmerName);
+      }
+    });
+  });
+
+  // Modal Reject Button
+  $(document).on('click', '#modalRejectBtn', function() {
+    if (!currentFarmerId) return;
+    
+    closeAllDocumentsModal();
+    
+    Swal.fire({
+      title: 'Reject KYC',
+      html: `Reject KYC for <strong>${currentFarmerName}</strong>?`,
+      input: 'textarea',
+      inputLabel: 'Rejection Reason (Required)',
+      inputPlaceholder: 'Enter detailed reason...',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Reject',
+      inputValidator: (value) => {
+        if (!value) return 'Reason is required!';
+        if (value.length < 10) return 'Please provide detailed reason';
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        changeKYCStatus(currentFarmerId, 'rejected', currentFarmerName, result.value);
+      }
+    });
+  });
+
+  // Close modal on ESC key
+  $(document).on('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeAllDocumentsModal();
+    }
+  });
+
+  // Close modal on background click
+  $('#allDocumentsModal').on('click', function(e) {
+    if (e.target.id === 'allDocumentsModal') {
+      closeAllDocumentsModal();
+    }
+  });
+});
+</script>
+{% endblock %}

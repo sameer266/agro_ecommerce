@@ -1,0 +1,455 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agro Commerce Admin Panel</title>
+    <link rel="icon" href="{{organization.logo.url}}" type="image/x-icon">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- Axios -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#2d6a4f',
+              'primary-light': '#52b788',
+              'primary-dark': '#1b4332',
+              'accent': '#d4a574',
+            },
+            fontFamily: {
+              'sans': ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Data Tables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: #fafafa;
+        color: #1a1a1a;
+        line-height: 1.5;
+      }
+
+      /* Navbar */
+      .navbar {
+        background: #ffffff;
+        border-bottom: 1px solid #e5e5e5;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: #ffffff;
+        border-right: 1px solid #e5e5e5;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 16rem;
+        transform: translateX(-100%);
+        z-index: 50;
+        overflow-y: auto;
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
+      }
+
+      .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: #525252;
+        text-decoration: none;
+        margin: 0 0.5rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+      }
+
+      .sidebar-link:hover {
+        background: #f5f5f5;
+        color: #2d6a4f;
+      }
+
+      .sidebar-link.active {
+        background: #f0fdf4;
+        color: #2d6a4f;
+      }
+
+      .sidebar-link i {
+        font-size: 1rem;
+        width: 1.25rem;
+        text-align: center;
+      }
+
+      /* Main Content */
+      .content {
+        margin-left: 0;
+        padding: 1.5rem;
+        margin-top: 4rem;
+        min-height: calc(100vh - 4rem);
+        width: 100%;
+      }
+
+      @media (min-width: 768px) {
+        .sidebar {
+          transform: translateX(0);
+          z-index: 40;
+        }
+
+        .content {
+          margin-left: 16rem;
+          width: calc(100% - 16rem);
+        }
+      }
+
+      /* Cards */
+      .card {
+        background: #ffffff;
+        border: 1px solid #e5e5e5;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .btn-primary {
+        background: #2d6a4f;
+        color: #ffffff;
+      }
+
+      .btn-primary:hover {
+        background: #1b4332;
+      }
+
+      .btn-success {
+        background: #52b788;
+        color: #ffffff;
+      }
+
+      .btn-success:hover {
+        background: #40916c;
+      }
+
+      .btn-warning {
+        background: #f59e0b;
+        color: #ffffff;
+      }
+
+      .btn-warning:hover {
+        background: #d97706;
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: #ffffff;
+      }
+
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+
+      .btn-info {
+        background: #3b82f6;
+        color: #ffffff;
+      }
+
+      .btn-info:hover {
+        background: #2563eb;
+      }
+
+      /* Input Fields */
+      .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d4d4d4;
+        border-radius: 0.375rem;
+        background: #ffffff;
+        color: #1a1a1a;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: #2d6a4f;
+        box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+      }
+
+      /* Overlay */
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 45;
+      }
+
+      .overlay.active {
+        display: block;
+      }
+
+      /* Menu Toggle */
+      .menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        background: transparent;
+        border: none;
+        color: #525252;
+        cursor: pointer;
+      }
+
+      .menu-toggle:hover {
+        color: #2d6a4f;
+      }
+
+      @media (min-width: 768px) {
+        .menu-toggle {
+          display: none;
+        }
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #f5f5f5;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #d4d4d4;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a3a3a3;
+      }
+
+      /* Table */
+      .table {
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e5e5e5;
+        border-radius: 0.5rem;
+        overflow: hidden;
+      }
+
+      .table thead {
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .table th {
+        padding: 0.75rem;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.875rem;
+        color: #525252;
+      }
+
+      .table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #f5f5f5;
+        font-size: 0.875rem;
+      }
+
+      .table tbody tr:hover {
+        background: #fafafa;
+      }
+
+      /* Badge */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .badge-danger {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .badge-info {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+    </style>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 md:px-6 h-16">
+      <div class="flex items-center gap-4">
+        <button class="menu-toggle" id="toggle-sidebar">
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+        <div class="flex items-center gap-2 text-lg font-semibold text-gray-800">
+          <i class="fas fa-seedling text-xl text-primary"></i>
+          <span class="hidden sm:inline">Agro Commerce</span>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        {% include 'components/navbar.html' %}
+      </div>
+    </nav>
+
+    <div class="flex">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="sidebar">
+        {% include 'components/sidebar.html' %}
+      </aside>
+
+      <!-- Main content -->
+      <main id="content" class="content">
+        {% block content %}
+        <!-- Content will be filled by child templates -->
+        {% endblock %}
+      </main>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay"></div>
+
+    <script>
+      $(document).ready(function () {
+        // Toggle sidebar
+        $("#toggle-sidebar").on("click", function () {
+          $("#sidebar").toggleClass("active");
+          $("#overlay").toggleClass("active");
+        });
+
+        // Close sidebar when clicking overlay
+        $("#overlay").on("click", function () {
+          $("#sidebar").removeClass("active");
+          $(this).removeClass("active");
+        });
+
+        // Highlight current page
+        const currentPath = window.location.pathname;
+        $(".sidebar-link").each(function () {
+          const linkPath = $(this).attr("href");
+          if (currentPath === linkPath || (currentPath.startsWith(linkPath) && linkPath !== "/")) {
+            $(this).addClass("active");
+          }
+        });
+
+        // Handle window resize
+        $(window).resize(function () {
+          if ($(window).width() >= 768) {
+            $("#sidebar").removeClass("active");
+            $("#overlay").removeClass("active");
+          }
+        });
+
+        // Confirm before delete
+        $(".delete-btn").on("click", function(e) {
+          e.preventDefault();
+          const itemName = $(this).data("item-name") || "this item";
+          const deleteUrl = $(this).attr("href");
+          
+          Swal.fire({
+            title: 'Delete?',
+            text: `Delete ${itemName}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#ef4444',
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = deleteUrl;
+            }
+          });
+        });
+      });
+
+      // Django Messages
+      {% if messages %}
+        {% for message in messages %}
+          Swal.fire({
+            icon: '{% if message.tags == "success" %}success{% elif message.tags == "error" %}error{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
+            text: "{{ message|escapejs }}",
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+          });
+        {% endfor %}
+      {% endif %}
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Agro Commerce</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2d5f3f',
+                        'primary-dark': '#234a32',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-5">
+    <div class="bg-white rounded-lg shadow-lg p-10 w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <i class="fas fa-leaf text-primary text-4xl mb-3"></i>
+            <h1 class="text-2xl font-semibold text-primary">Agro Commerce</h1>
+        </div>
+
+        <!-- Login Form -->
+        <form method="post" id="loginForm">
+            {% csrf_token %}
+            
+            <!-- Email Field -->
+            <div class="mb-5">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-envelope text-gray-400 mr-2"></i>Email Address
+                </label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                    placeholder="Enter your email"
+                >
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-5">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-lock text-gray-400 mr-2"></i>Password
+                </label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                        placeholder="Enter your password"
+                    >
+                    <button 
+                        type="button" 
+                        onclick="togglePassword()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                        <i class="fas fa-eye" id="toggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Remember Me & Forgot Password -->
+            <div class="flex items-center justify-between mb-6">
+                <label class="flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="remember" 
+                        name="remember"
+                        class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer"
+                    >
+                    <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+                <a href="#" class="text-sm text-primary hover:text-primary-dark transition">
+                    Forgot password?
+                </a>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+                type="submit"
+                class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 rounded-lg transition duration-200 flex items-center justify-center"
+            >
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Sign In
+            </button>
+        </form>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-sm text-gray-500">
+            <i class="far fa-copyright"></i> 2024 Agro Commerce. All rights reserved.
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        // Django messages handling with SweetAlert2
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    icon: '{{ message.tags|default:"info" }}',
+                    title: '{% if message.tags == "error" %}Error{% elif message.tags == "success" %}Success{% elif message.tags == "warning" %}Warning{% else %}Info{% endif %}',
+                    text: '{{ message }}',
+                    confirmButtonColor: '#2d5f3f',
+                    confirmButtonText: 'OK'
+                });
+            {% endfor %}
+        {% endif %}
+
+     
+    
+    </script>
+</body>
+</html>

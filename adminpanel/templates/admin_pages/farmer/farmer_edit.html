@@ -1,0 +1,294 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-6">
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-4">
+ <a href="javascript:void(0)" onclick="history.back()" class="btn btn-secondary">
+  <i class="fas fa-arrow-left"></i> Back
+</a>
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-edit text-green-600"></i>
+        Edit Farmer - {{ farmer.farm_name }}
+      </h1>
+      <p class="text-sm text-gray-500">Update farmer information and details</p>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Form -->
+<div class="card">
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <!-- Basic Information -->
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
+        <i class="fas fa-info-circle text-blue-600"></i>
+        Basic Information
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Farm Name <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="farm_name" value="{{ farmer.farm_name }}" class="form-control" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Phone Number <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="phone" value="{{ farmer.phone }}" class="form-control" required>
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea name="description" rows="3" class="form-control">{{ farmer.description }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Owner Information -->
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
+        <i class="fas fa-user text-purple-600"></i>
+        Owner Information
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            First Name <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="first_name" value="{{ farmer.user.first_name }}" class="form-control" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Last Name <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="last_name" value="{{ farmer.user.last_name }}" class="form-control" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Email <span class="text-red-500">*</span>
+          </label>
+          <input type="email" name="email" value="{{ farmer.user.email }}" class="form-control" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Username <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="username" value="{{ farmer.user.username }}" class="form-control" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Information -->
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
+        <i class="fas fa-map-marker-alt text-red-600"></i>
+        Location Information
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Province <span class="text-red-500">*</span>
+          </label>
+          <select name="province" class="form-control" required>
+            <option value="">Select Province</option>
+            <option value="koshi" {% if farmer.province == 'koshi' %}selected{% endif %}>Koshi Province</option>
+            <option value="madhesh" {% if farmer.province == 'madhesh' %}selected{% endif %}>Madhesh Province</option>
+            <option value="bagmati" {% if farmer.province == 'bagmati' %}selected{% endif %}>Bagmati Province</option>
+            <option value="gandaki" {% if farmer.province == 'gandaki' %}selected{% endif %}>Gandaki Province</option>
+            <option value="lumbini" {% if farmer.province == 'lumbini' %}selected{% endif %}>Lumbini Province</option>
+            <option value="karnali" {% if farmer.province == 'karnali' %}selected{% endif %}>Karnali Province</option>
+            <option value="sudurpashchim" {% if farmer.province == 'sudurpashchim' %}selected{% endif %}>Sudurpashchim Province</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            City <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="city" value="{{ farmer.city }}" class="form-control" required>
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Full Address <span class="text-red-500">*</span>
+          </label>
+          <textarea name="address" rows="2" class="form-control" required>{{ farmer.address }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- KYC Information -->
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
+        <i class="fas fa-id-card text-indigo-600"></i>
+        KYC Information
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            PAN Number <span class="text-red-500">*</span>
+          </label>
+          <input type="text" name="pan_number" value="{{ farmer.pan_number }}" class="form-control" required>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Citizenship Number
+          </label>
+          <input type="text" name="citizenship_number" value="{{ farmer.citizenship_number }}" class="form-control">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            PAN Document
+          </label>
+          <input type="file" name="pan_document" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+          {% if farmer.pan_document %}
+          <p class="text-xs text-gray-500 mt-1">
+            Current: <a href="{{ farmer.pan_document.url }}" target="_blank" class="text-blue-600 hover:underline">View Document</a>
+          </p>
+          {% endif %}
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Payment QR Image
+          </label>
+          <input type="file" name="qr_image" class="form-control" accept=".jpg,.jpeg,.png">
+          {% if farmer.qr_image %}
+          <p class="text-xs text-gray-500 mt-1">
+            Current: <a href="{{ farmer.qr_image.url }}" target="_blank" class="text-blue-600 hover:underline">View QR</a>
+          </p>
+          {% endif %}
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Citizenship Front
+          </label>
+          <input type="file" name="citizenship_front" class="form-control" accept=".jpg,.jpeg,.png">
+          {% if farmer.citizenship_front %}
+          <p class="text-xs text-gray-500 mt-1">
+            Current: <a href="{{ farmer.citizenship_front.url }}" target="_blank" class="text-blue-600 hover:underline">View Front</a>
+          </p>
+          {% endif %}
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Citizenship Back
+          </label>
+          <input type="file" name="citizenship_back" class="form-control" accept=".jpg,.jpeg,.png">
+          {% if farmer.citizenship_back %}
+          <p class="text-xs text-gray-500 mt-1">
+            Current: <a href="{{ farmer.citizenship_back.url }}" target="_blank" class="text-blue-600 hover:underline">View Back</a>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Information -->
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
+        <i class="fas fa-toggle-on text-green-600"></i>
+        Status Settings
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Verification Status
+          </label>
+          <select name="verification_status" class="form-control">
+            <option value="pending" {% if farmer.verification_status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="verified" {% if farmer.verification_status == 'verified' %}selected{% endif %}>Verified</option>
+            <option value="rejected" {% if farmer.verification_status == 'rejected' %}selected{% endif %}>Rejected</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Active Status
+          </label>
+          <select name="is_active" class="form-control">
+            <option value="1" {% if farmer.is_active %}selected{% endif %}>Active</option>
+            <option value="0" {% if not farmer.is_active %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+        
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Rejection Reason (if rejected)
+          </label>
+          <textarea name="rejection_reason" rows="2" class="form-control">{{ farmer.rejection_reason }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-3 justify-end pt-4 border-t">
+      <a href="{% url 'admin_farmer_details_page' farmer.id %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+    </div>
+    
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  
+  // Form validation
+  $('form').on('submit', function(e) {
+    let isValid = true;
+    const requiredFields = $(this).find('[required]');
+    
+    requiredFields.each(function() {
+      if (!$(this).val()) {
+        isValid = false;
+        $(this).addClass('border-red-500');
+      } else {
+        $(this).removeClass('border-red-500');
+      }
+    });
+    
+    if (!isValid) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Required Fields',
+        text: 'Please fill in all required fields marked with *'
+      });
+    }
+  });
+  
+  // Remove error border on input
+  $('input, select, textarea').on('change input', function() {
+    $(this).removeClass('border-red-500');
+  });
+  
+});
+</script>
+{% endblock %}
