@@ -1,0 +1,260 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+        <i class="fas fa-warehouse text-blue-600"></i>
+        Browse Warehouse
+      </h1>
+      <p class="text-sm text-gray-500">Available farmer products to select from</p>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Overview -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <!-- Available Products -->
+  <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Available Products</p>
+        <h3 class="text-2xl font-bold text-blue-700">{{ total_products }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-box text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Stock Available -->
+  <div class="card bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Total Stock Available</p>
+        <h3 class="text-2xl font-bold text-green-700">
+          {{ total_quantity|default:0|floatformat:0 }} kg
+        </h3>
+      </div>
+      <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-weight text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Average Stock/Product -->
+  <div class="card bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Average Stock/Product</p>
+        <h3 class="text-2xl font-bold text-purple-700">
+          {% if total_products > 0 %}
+            {% widthratio total_quantity total_products 1 %} kg
+          {% else %}
+            0 kg
+          {% endif %}
+        </h3>
+      </div>
+      <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-chart-bar text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Products Table -->
+<div class="card">
+  <div class="overflow-x-auto">
+    <table id="warehouseTable" class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Image</th>
+          <th>Product</th>
+          <th>Farmer</th>
+          <th>Location</th>
+          <th>Category</th>
+          <th>Quality</th>
+          <th>Available Qty</th>
+          <th>Base Price</th>
+          <th>Harvest Date</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fp in farmer_products %}
+        <tr>
+          <td class="font-medium text-primary">#{{ fp.id }}</td>
+          
+          <!-- Image -->
+          <td>
+            {% if fp.image %}
+            <img src="{{ fp.image.url }}" alt="{{ fp.name }}" class="w-12 h-12 object-cover rounded">
+            {% else %}
+            <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+              <i class="fas fa-image text-gray-400"></i>
+            </div>
+            {% endif %}
+          </td>
+          
+          <!-- Product -->
+          <td>
+            <div class="font-medium text-gray-800">{{ fp.name }}</div>
+            {% if fp.description %}
+            <div class="text-xs text-gray-500 max-w-xs truncate">{{ fp.description }}</div>
+            {% endif %}
+          </td>
+          
+          <!-- Farmer -->
+          <td>
+            <div class="font-medium text-gray-700">
+              {{ fp.farmer.farm_name }}
+            </div>
+            <div class="text-xs text-gray-500">
+              {{ fp.farmer.user.get_full_name|default:fp.farmer.user.username }}
+            </div>
+            <div class="text-xs text-gray-400">
+              {{ fp.farmer.phone }}
+            </div>
+          </td>
+          
+          <!-- Location -->
+          <td>
+            <div class="font-medium">{{ fp.farmer.city }}</div>
+            <div class="text-xs text-gray-500">{{ fp.farmer.get_province_display }}</div>
+          </td>
+          
+          <!-- Category -->
+          <td>
+            {% if fp.category %}
+            <span class="badge badge-info">{{ fp.category.name }}</span>
+            {% else %}
+            <span class="text-gray-400 text-xs">No Category</span>
+            {% endif %}
+          </td>
+          
+          <!-- Quality -->
+          <td>
+            <span class="badge {% if fp.quality == 'A' %}badge-success{% elif fp.quality == 'B' %}badge-warning{% else %}badge-secondary{% endif %}">
+              {{ fp.get_quality_display }}
+            </span>
+          </td>
+          
+          <!-- Available Quantity -->
+          <td class="font-semibold text-center text-green-600">
+            {{ fp.available_quantity|floatformat:1 }} kg
+            {% if fp.quantity > 0 %}
+            <div class="text-xs text-gray-500 mt-1">
+              of {{ fp.quantity|floatformat:1 }} kg
+            </div>
+            {% endif %}
+          </td>
+          
+          <!-- Base Price -->
+          <td class="font-semibold text-primary">Rs. {{ fp.base_price|floatformat:2 }}</td>
+          
+          <!-- Harvest Date -->
+          <td>
+            {% if fp.harvest_date %}
+            <div class="text-sm text-gray-700">{{ fp.harvest_date|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">
+              {{ fp.harvest_date|timesince }} ago
+            </div>
+            {% else %}
+            <span class="text-gray-400 text-xs">N/A</span>
+            {% endif %}
+          </td>
+          
+          <!-- Expiry Date -->
+          <td>
+            {% if fp.expiry_date %}
+            <div class="{% if fp.is_expired %}text-red-600 font-medium{% else %}text-gray-700{% endif %}">
+              {{ fp.expiry_date|date:"M d, Y" }}
+            </div>
+            {% if fp.is_expired %}
+            <span class="text-xs text-red-500">
+              <i class="fas fa-exclamation-triangle"></i> Expired
+            </span>
+            {% else %}
+            <div class="text-xs text-gray-500">
+              {{ fp.expiry_date|timeuntil }} left
+            </div>
+            {% endif %}
+            {% else %}
+            <span class="text-gray-400 text-xs">N/A</span>
+            {% endif %}
+          </td>
+          
+          <!-- Status -->
+          <td>
+            {% if fp.is_expired %}
+            <span class="badge badge-danger">
+              <i class="fas fa-times-circle"></i> Expired
+            </span>
+            {% elif fp.available_quantity <= 0 %}
+            <span class="badge badge-danger">
+              <i class="fas fa-box-open"></i> Out of Stock
+            </span>
+            {% elif fp.is_available %}
+            <span class="badge badge-success">
+              <i class="fas fa-check-circle"></i> Available
+            </span>
+            {% else %}
+            <span class="badge badge-warning">
+              <i class="fas fa-exclamation-circle"></i> Unavailable
+            </span>
+            {% endif %}
+          </td>
+          
+          <!-- Actions -->
+          <td>
+            <div class="flex gap-2">
+              <a href="{% url 'vendor_warehouse_detail' fp.pk %}" class="btn btn-info btn-sm" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="13" class="text-center text-gray-500 py-8">
+            <i class="fas fa-warehouse text-4xl mb-2 text-gray-300"></i>
+            <p class="font-medium">No warehouse items available</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize DataTable with search enabled
+  $('#warehouseTable').DataTable({
+    pageLength: 25,
+    order: [[7, 'desc']], // Sort by available quantity
+    responsive: true,
+    searching: true, // Enable search
+    language: {
+      emptyTable: "No warehouse items available",
+      info: "Showing _START_ to _END_ of _TOTAL_ products",
+      infoEmpty: "Showing 0 to 0 of 0 products",
+      infoFiltered: "(filtered from _MAX_ total products)",
+      search: "Search:",
+      searchPlaceholder: "Search warehouse..."
+    },
+    columnDefs: [
+      { orderable: false, targets: [1, 12] } // Disable sorting for image and actions
+    ]
+  });
+});
+</script>
+{% endblock %}

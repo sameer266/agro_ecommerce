@@ -1,8 +1,105 @@
 {% extends 'components/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="p-6">
-  <h1 class="text-2xl font-semibold mb-4">Shop Settings</h1>
-  <div class="bg-white shadow rounded p-4">Edit shop details and preferences.</div>
+<div class="mb-6">
+  <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+    <i class="fas fa-store text-blue-600"></i>
+    Shop Settings
+  </h1>
+  <p class="text-sm text-gray-500">Manage your shop information and preferences</p>
+</div>
+
+<div class="card">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <!-- Shop Logo Section -->
+    <div class="mb-6 pb-6 border-b">
+      <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Shop Logo</h3>
+      <div class="flex items-center gap-6">
+        {% if vendor.shop_logo %}
+        <img src="{{ vendor.shop_logo.url }}" alt="Shop Logo" class="w-24 h-24 object-cover rounded-lg border-2 border-gray-200">
+        {% else %}
+        <div class="w-24 h-24 bg-gray-100 rounded-lg border-2 border-gray-200 flex items-center justify-center">
+          <i class="fas fa-store text-gray-400 text-3xl"></i>
+        </div>
+        {% endif %}
+        <div>
+          <input type="file" name="shop_logo" class="form-control" accept="image/*" />
+          <p class="text-xs text-gray-500 mt-2">Recommended: Square image, at least 200x200px</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Basic Information -->
+    <div class="mb-6 pb-6 border-b">
+      <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Basic Information</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-store text-gray-400"></i> Shop Name *
+          </label>
+          <input type="text" name="shop_name" class="form-control" value="{{ vendor.shop_name }}" required />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-phone text-gray-400"></i> Phone Number
+          </label>
+          <input type="text" name="phone" class="form-control" value="{{ vendor.phone }}" />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-align-left text-gray-400"></i> Description
+          </label>
+          <textarea name="description" rows="4" class="form-control" placeholder="Tell customers about your shop...">{{ vendor.description }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Information -->
+    <div class="mb-6">
+      <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Location Details</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-map-marker-alt text-gray-400"></i> Address
+          </label>
+          <input type="text" name="address" class="form-control" value="{{ vendor.address }}" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-city text-gray-400"></i> City
+          </label>
+          <input type="text" name="city" class="form-control" value="{{ vendor.city }}" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-map text-gray-400"></i> Province
+          </label>
+          <select name="province" class="form-control">
+            <option value="">Select Province</option>
+            {% for key, label in provinces %}
+            <option value="{{ key }}" {% if vendor.province == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-3 pt-4 border-t">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+      <a href="{% url 'vendor_dashboard_page' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+    </div>
+  </form>
 </div>
 {% endblock %}

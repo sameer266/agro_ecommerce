@@ -1,151 +1,210 @@
 {% extends 'components/base.html' %}
-
-{% block extra_css %}
-<style>
-  .stat-card { background: white; border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1.5rem; border-left: 4px solid #3b82f6 }
-  .stat-card.green { border-left-color: #10b981 }
-  .stat-card.yellow { border-left-color: #f59e0b }
-  .icon-box { width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50% }
-  .detail-section { background: white; border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1.5rem; margin-bottom: 1.5rem }
-  .detail-label { font-size: .875rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .025em; margin-bottom: .5rem }
-</style>
-{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="p-6">
-  <div class="mb-6">
-    <h1 class="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-      <i class="fas fa-wallet text-green-600"></i> My Wallet
-    </h1>
-    <p class="text-sm text-gray-600 mt-1">Manage your account balance and view earnings</p>
-  </div>
-
-  <!-- Main Balance Card -->
-  <div class="stat-card green mb-6" style="border-left-width: 6px; padding: 2rem">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="detail-label">Current Balance</p>
-        <h3 class="text-4xl font-bold text-green-700">Rs. {{ wallet_balance|floatformat:2 }}</h3>
-        <p class="text-sm text-gray-600 mt-2">Available funds in your wallet</p>
-      </div>
-      <div class="icon-box bg-green-100" style="width: 5rem; height: 5rem">
-        <i class="fas fa-coins text-green-600 text-3xl"></i>
-      </div>
-    </div>
-  </div>
-
-  <!-- Statistics Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-    <!-- Total Revenue -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="detail-label">Total Revenue</p>
-          <h3 class="text-3xl font-bold text-blue-700">Rs. {{ total_revenue|floatformat:2 }}</h3>
-          <p class="text-xs text-gray-600 mt-1">From completed orders</p>
-        </div>
-        <div class="icon-box bg-blue-100">
-          <i class="fas fa-chart-line text-blue-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Orders Count -->
-    <div class="stat-card yellow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="detail-label">Recent Orders</p>
-          <h3 class="text-3xl font-bold text-yellow-700">{{ recent_orders.count }}</h3>
-          <p class="text-xs text-gray-600 mt-1">Last 50 delivered</p>
-        </div>
-        <div class="icon-box bg-yellow-100">
-          <i class="fas fa-shopping-cart text-yellow-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Avg Order Value -->
-    <div class="stat-card" style="border-left-color: #8b5cf6">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="detail-label">Avg Order Value</p>
-          <h3 class="text-3xl font-bold text-purple-700">
-            Rs. {% if recent_orders.count %}{{ total_revenue|add:recent_orders.count|add:""|cut:"" }}{% else %}0{% endif %}
-          </h3>
-          <p class="text-xs text-gray-600 mt-1">Average per order</p>
-        </div>
-        <div class="icon-box bg-purple-100">
-          <i class="fas fa-calculator text-purple-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Wallet Information -->
-  <div class="detail-section">
-    <p class="detail-label mb-4">Wallet Information</p>
-    <div class="grid grid-cols-2 gap-6">
-      <div>
-        <p class="text-xs text-gray-600 mb-1">Account Status</p>
-        <span class="text-sm font-medium px-3 py-1 rounded-full bg-green-100 text-green-700">Active</span>
-      </div>
-      <div>
-        <p class="text-xs text-gray-600 mb-1">Last Updated</p>
-        <p class="text-sm font-medium text-gray-900">{{ wallet.updated_at|date:"M d, Y H:i" }}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recent Transactions -->
-  <div class="detail-section">
-    <p class="detail-label mb-4">Recent Orders</p>
-    {% if recent_orders %}
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 border-b">
-            <tr>
-              <th class="px-4 py-3 text-left">Order ID</th>
-              <th class="px-4 py-3 text-left">Customer</th>
-              <th class="px-4 py-3">Amount</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for order in recent_orders %}
-            <tr class="border-b hover:bg-gray-50">
-              <td class="px-4 py-3 font-medium">{{ order.order_number }}</td>
-              <td class="px-4 py-3">{{ order.full_name }}</td>
-              <td class="px-4 py-3 font-semibold text-green-700">Rs. {{ order.total|floatformat:2 }}</td>
-              <td class="px-4 py-3">
-                <span class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">{{ order.get_status_display }}</span>
-              </td>
-              <td class="px-4 py-3 text-gray-600">{{ order.created_at|date:"M d, Y" }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="text-center py-8 text-gray-500">
-        <i class="fas fa-inbox text-3xl mb-2 block text-gray-300"></i>
-        <p>No recent transactions</p>
-      </div>
-    {% endif %}
-  </div>
-
-  <!-- Quick Actions -->
-  <div class="detail-section">
-    <p class="detail-label mb-4">Actions</p>
-    <div class="flex gap-2 flex-wrap">
-      <a href="{% url 'vendor_finance_payouts' %}" class="btn btn-primary">
-        <i class="fas fa-money-bill"></i> Request Payout
-      </a>
-      <a href="{% url 'vendor_finance_earnings' %}" class="btn btn-info">
-        <i class="fas fa-chart-bar"></i> View Earnings Report
-      </a>
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+        <i class="fas fa-wallet text-green-600"></i>
+        My Wallet
+      </h1>
+      <p class="text-sm text-gray-500">Manage your account balance and view earnings</p>
     </div>
   </div>
 </div>
 
+<!-- Main Balance Card -->
+<div class="card bg-gradient-to-br from-green-50 to-green-100 border-green-300 border-l-8 mb-6">
+  <div class="flex items-center justify-between p-6">
+    <div>
+      <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Current Balance</p>
+      <h3 class="text-4xl font-bold text-green-700 mb-2">Rs. {{ wallet_balance|floatformat:2 }}</h3>
+      <p class="text-sm text-gray-600">Available funds in your wallet</p>
+    </div>
+    <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center">
+      <i class="fas fa-coins text-white text-3xl"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <!-- Total Revenue -->
+  <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Total Revenue</p>
+        <h3 class="text-2xl font-bold text-blue-700 mb-1">Rs. {{ total_revenue|floatformat:2 }}</h3>
+        <p class="text-xs text-gray-600">From completed orders</p>
+      </div>
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-chart-line text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Orders Count -->
+  <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Recent Orders</p>
+        <h3 class="text-2xl font-bold text-yellow-700 mb-1">{{ recent_orders.count }}</h3>
+        <p class="text-xs text-gray-600">Last 50 delivered</p>
+      </div>
+      <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-shopping-cart text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avg Order Value -->
+  <div class="card bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Avg Order Value</p>
+        <h3 class="text-2xl font-bold text-purple-700 mb-1">
+          Rs. {% if recent_orders.count > 0 %}{% widthratio total_revenue recent_orders.count 1 %}{% else %}0{% endif %}
+        </h3>
+        <p class="text-xs text-gray-600">Average per order</p>
+      </div>
+      <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-calculator text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Wallet Information -->
+<div class="card mb-6">
+  <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Wallet Information</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div>
+      <p class="text-xs text-gray-600 mb-2 font-medium">Account Status</p>
+      <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-medium">
+        <i class="fas fa-check-circle"></i>
+        Active
+      </span>
+    </div>
+    <div>
+      <p class="text-xs text-gray-600 mb-2 font-medium">Last Updated</p>
+      <p class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <i class="fas fa-clock text-gray-400"></i>
+        {{ wallet.updated_at|date:"M d, Y H:i" }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Recent Orders</h3>
+    {% if recent_orders %}
+    <span class="text-xs text-gray-500">Showing last {{ recent_orders.count }} orders</span>
+    {% endif %}
+  </div>
+  
+  {% if recent_orders %}
+  <div class="overflow-x-auto">
+    <table id="ordersTable" class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Contact</th>
+          <th>Amount</th>
+          <th>Payment Method</th>
+          <th>Status</th>
+          <th>Order Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in recent_orders %}
+        <tr>
+          <td class="font-medium text-primary">{{ order.order_number }}</td>
+          <td>
+            <div class="font-medium text-gray-800">{{ order.full_name }}</div>
+            {% if order.email %}
+            <div class="text-xs text-gray-500">{{ order.email }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div class="text-sm text-gray-700">{{ order.phone }}</div>
+            {% if order.address %}
+            <div class="text-xs text-gray-500 max-w-xs truncate">{{ order.address }}</div>
+            {% endif %}
+          </td>
+          <td class="font-semibold text-green-700">Rs. {{ order.total|floatformat:2 }}</td>
+          <td>
+            <span class="badge badge-info">
+              <i class="fas fa-credit-card"></i> {{ order.payment_method|default:"Cash" }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {% if order.status == 'delivered' %}badge-success{% elif order.status == 'pending' %}badge-warning{% elif order.status == 'cancelled' %}badge-danger{% else %}badge-info{% endif %}">
+              {{ order.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <div class="text-sm text-gray-700">{{ order.created_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ order.created_at|time:"H:i" }}</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-12 text-gray-500">
+    <i class="fas fa-inbox text-5xl mb-3 text-gray-300"></i>
+    <p class="font-medium text-lg">No recent transactions</p>
+    <p class="text-sm text-gray-400 mt-1">Your order history will appear here</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+  <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Quick Actions</h3>
+  <div class="flex gap-3 flex-wrap">
+    <a href="{% url 'vendor_finance_payouts' %}" class="btn btn-primary">
+      <i class="fas fa-money-bill-wave"></i> Request Payout
+    </a>
+    <a href="{% url 'vendor_finance_earnings' %}" class="btn btn-info">
+      <i class="fas fa-chart-bar"></i> View Earnings Report
+    </a>
+    <a href="{% url 'vendor_orders_all' %}" class="btn btn-secondary">
+      <i class="fas fa-shopping-cart"></i> View All Orders
+    </a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize DataTable with search enabled (if table exists)
+  if ($('#ordersTable').length) {
+    $('#ordersTable').DataTable({
+      pageLength: 25,
+      order: [[6, 'desc']], // Sort by order date
+      responsive: true,
+      searching: true, // Enable search
+      language: {
+        emptyTable: "No orders found",
+        info: "Showing _START_ to _END_ of _TOTAL_ orders",
+        infoEmpty: "Showing 0 to 0 of 0 orders",
+        infoFiltered: "(filtered from _MAX_ total orders)",
+        search: "Search:",
+        searchPlaceholder: "Search orders..."
+      },
+      columnDefs: [
+        { orderable: true, targets: '_all' }
+      ]
+    });
+  }
+});
+</script>
 {% endblock %}

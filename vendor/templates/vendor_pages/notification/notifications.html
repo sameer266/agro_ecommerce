@@ -1,0 +1,304 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+        <i class="fas fa-bell text-blue-600"></i>
+        Notifications
+      </h1>
+      <p class="text-sm text-gray-500">Stay updated with important alerts and messages</p>
+    </div>
+    <div class="flex gap-2">
+      {% if total_unread > 0 %}
+      <button class="btn btn-primary" >
+        <i class="fas fa-check-double"></i> Mark All as Read
+      </button>
+      {% endif %}
+      <button class="btn btn-secondary" onclick="clearAllNotifications()">
+        <i class="fas fa-trash-alt"></i> Clear All
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
+  <!-- Total Notifications -->
+  <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Total Notifications</p>
+        <h3 class="text-2xl font-bold text-blue-700">{{ notifications.count }}</h3>
+        <p class="text-xs text-gray-600">All messages</p>
+      </div>
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-inbox text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unread Notifications -->
+  <div class="card bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Unread</p>
+        <h3 class="text-2xl font-bold text-red-700">{{ total_unread }}</h3>
+        <p class="text-xs text-gray-600">Needs attention</p>
+      </div>
+      <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-envelope text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Read Notifications -->
+  <div class="card bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Read</p>
+        <h3 class="text-2xl font-bold text-green-700">{{ notifications.count|add:"-"|add:total_unread }}</h3>
+        <p class="text-xs text-gray-600">Reviewed</p>
+      </div>
+      <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-envelope-open text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+
+
+<!-- Quick Filter Tabs -->
+<div class="card mb-6">
+  <div class="flex gap-2 flex-wrap">
+    <button class="btn btn-sm" id="filterAll" onclick="filterNotifications('all')">
+      <i class="fas fa-list"></i> All ({{ notifications.count }})
+    </button>
+    <button class="btn btn-sm" id="filterUnread" onclick="filterNotifications('unread')">
+      <i class="fas fa-envelope"></i> Unread ({{ total_unread }})
+    </button>
+    <button class="btn btn-sm" id="filterOrder" onclick="filterNotifications('order')">
+      <i class="fas fa-shopping-cart"></i> Orders
+    </button>
+    <button class="btn btn-sm" id="filterProduct" onclick="filterNotifications('product')">
+      <i class="fas fa-box"></i> Products
+    </button>
+    <button class="btn btn-sm" id="filterPayout" onclick="filterNotifications('payout')">
+      <i class="fas fa-money-bill-wave"></i> Payouts
+    </button>
+    <button class="btn btn-sm" id="filterSelection" onclick="filterNotifications('selection')">
+      <i class="fas fa-check-circle"></i> Selections
+    </button>
+    <button class="btn btn-sm" id="filterDelivery" onclick="filterNotifications('delivery')">
+      <i class="fas fa-truck"></i> Delivery
+    </button>
+  </div>
+</div>
+
+<!-- Notifications Table -->
+<div class="card">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+      <i class="fas fa-list text-blue-600"></i>
+      All Notifications
+    </h3>
+    {% if notifications %}
+    <span class="text-xs text-gray-500">Showing {{ notifications.count }} notifications</span>
+    {% endif %}
+  </div>
+  
+  {% if notifications %}
+  <div class="overflow-x-auto">
+    <table id="notificationsTable" class="table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Type</th>
+          <th>Title</th>
+          <th>Message</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for notification in notifications %}
+        <tr data-read="{{ notification.is_read|yesno:'true,false' }}" data-type="{{ notification.notification_type }}" class="{% if not notification.is_read %}bg-blue-50{% endif %}">
+          
+          <!-- Status -->
+          <td>
+            {% if notification.is_read %}
+            <span class="badge badge-secondary">
+              <i class="fas fa-envelope-open"></i> Read
+            </span>
+            {% else %}
+            <span class="badge badge-danger">
+              <i class="fas fa-envelope"></i> Unread
+            </span>
+            {% endif %}
+          </td>
+          
+          <!-- Type -->
+          <td>
+            {% if notification.notification_type == 'order' %}
+            <span class="badge badge-info">
+              <i class="fas fa-shopping-cart"></i> Order
+            </span>
+            {% elif notification.notification_type == 'product' %}
+            <span class="badge badge-success">
+              <i class="fas fa-box"></i> Product
+            </span>
+            {% elif notification.notification_type == 'payout' %}
+            <span class="badge badge-warning">
+              <i class="fas fa-money-bill-wave"></i> Payout
+            </span>
+            {% elif notification.notification_type == 'selection' %}
+            <span class="badge" style="background: #8b5cf6; color: white;">
+              <i class="fas fa-check-circle"></i> Selection
+            </span>
+            {% elif notification.notification_type == 'delivery' %}
+            <span class="badge" style="background: #06b6d4; color: white;">
+              <i class="fas fa-truck"></i> Delivery
+            </span>
+            {% else %}
+            <span class="badge badge-secondary">
+              <i class="fas fa-info-circle"></i> General
+            </span>
+            {% endif %}
+          </td>
+          
+          <!-- Title -->
+          <td>
+            <div class="flex items-start gap-2">
+              {% if not notification.is_read %}
+              <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+              {% endif %}
+              <div>
+                <div class="font-semibold text-gray-800 {% if not notification.is_read %}font-bold{% endif %}">
+                  {{ notification.title }}
+                </div>
+                {% if not notification.is_read %}
+                <span class="text-xs text-blue-600 font-medium">New</span>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          
+          <!-- Message -->
+          <td>
+            <div class="text-sm text-gray-700 max-w-md">
+              <p class="line-clamp-2">{{ notification.message }}</p>
+            </div>
+          </td>
+          
+          <!-- Date -->
+          <td>
+            <div class="text-sm text-gray-700">{{ notification.created_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ notification.created_at|time:"H:i" }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ notification.created_at|timesince }} ago</div>
+          </td>
+          
+          <!-- Actions -->
+          <td>
+            <div >
+              {% if not notification.is_read %}
+              <button class="btn btn-success btn-sm" title="Mark as Read" >
+                <i class="fas fa-check"></i>
+              </button>
+              {% endif %}
+          
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-12 text-gray-500">
+    <i class="fas fa-bell-slash text-5xl mb-3 text-gray-300"></i>
+    <p class="font-medium text-lg">No notifications yet</p>
+    <p class="text-sm text-gray-400 mt-1">You'll receive notifications about orders, products, and payouts here</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize DataTable with search enabled (if table exists)
+  if ($('#notificationsTable').length) {
+    window.notificationsTable = $('#notificationsTable').DataTable({
+      pageLength: 25,
+      order: [[4, 'desc']], // Sort by date
+      responsive: true,
+      searching: true, // Enable search
+      language: {
+        emptyTable: "No notifications found",
+        info: "Showing _START_ to _END_ of _TOTAL_ notifications",
+        infoEmpty: "Showing 0 to 0 of 0 notifications",
+        infoFiltered: "(filtered from _MAX_ total notifications)",
+        search: "Search:",
+        searchPlaceholder: "Search notifications..."
+      },
+      columnDefs: [
+        { orderable: false, targets: [5] } // Disable sorting for actions
+      ]
+    });
+  }
+  
+  // Set initial active filter
+  $('#filterAll').addClass('btn-primary').removeClass('btn-sm');
+});
+
+// Filter notifications
+function filterNotifications(type) {
+  // Reset all buttons
+  $('.btn').removeClass('btn-primary').addClass('btn-sm');
+  
+  if (type === 'all') {
+    $('#filterAll').addClass('btn-primary').removeClass('btn-sm');
+    window.notificationsTable.column(1).search('').draw();
+    window.notificationsTable.column(0).search('').draw();
+  } else if (type === 'unread') {
+    $('#filterUnread').addClass('btn-primary').removeClass('btn-sm');
+    window.notificationsTable.column(0).search('Unread').draw();
+  } else {
+    $('#filter' + type.charAt(0).toUpperCase() + type.slice(1)).addClass('btn-primary').removeClass('btn-sm');
+    window.notificationsTable.column(1).search(type).draw();
+  }
+}
+
+
+// Clear all notifications
+function clearAllNotifications() {
+  if (confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+    // AJAX call to clear all
+    alert('Clear all notifications functionality');
+    // After success, reload page
+    location.reload();
+  }
+}
+</script>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Highlight unread rows */
+  #notificationsTable tbody tr.bg-blue-50 td {
+    background-color: #eff6ff !important;
+  }
+  
+  #notificationsTable tbody tr.bg-blue-50:hover td {
+    background-color: #dbeafe !important;
+  }
+</style>
+{% endblock %}

@@ -1,175 +1,249 @@
 {% extends 'components/base.html' %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-<style>
-  .stat-card { background: white; border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1.5rem; border-left: 4px solid #3b82f6 }
-  .stat-card.green { border-left-color: #10b981 }
-  .stat-card.yellow { border-left-color: #f59e0b }
-  .icon-box { width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50% }
-  .detail-section { background: white; border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1.5rem; margin-bottom: 1.5rem }
-  .detail-label { font-size: .875rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .025em; margin-bottom: .5rem }
-</style>
-{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="p-6">
-  <div class="mb-6">
-    <div class="flex items-start justify-between">
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+        <i class="fas fa-arrow-right-arrow-left text-blue-600"></i>
+        Payout Requests
+      </h1>
+      <p class="text-sm text-gray-500">View and manage your payout requests</p>
+    </div>
+    <button class="btn btn-primary">
+      <i class="fas fa-plus"></i> New Payout Request
+    </button>
+  </div>
+</div>
+
+<!-- Statistics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <!-- Available Balance -->
+  <div class="card bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+    <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-          <i class="fas fa-arrow-right-arrow-left text-blue-600"></i> Payout Requests
-        </h1>
-        <p class="text-sm text-gray-600 mt-1">View and manage your payout requests</p>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Available Balance</p>
+        <h3 class="text-2xl font-bold text-green-700">Rs. {{ wallet_balance|floatformat:2 }}</h3>
+        <p class="text-xs text-gray-600 mt-1">Ready to withdraw</p>
       </div>
-      <button class="btn btn-primary">
-        <i class="fas fa-plus"></i> New Payout Request
-      </button>
-    </div>
-  </div>
-
-  <!-- Statistics Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-    <!-- Available Balance -->
-    <div class="stat-card green">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="detail-label">Available Balance</p>
-          <h3 class="text-3xl font-bold text-green-700">Rs. {{ wallet_balance|floatformat:2 }}</h3>
-        </div>
-        <div class="icon-box bg-green-100">
-          <i class="fas fa-wallet text-green-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pending Payouts -->
-    <div class="stat-card yellow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="detail-label">Pending Requests</p>
-          <h3 class="text-3xl font-bold text-yellow-700">0</h3>
-        </div>
-        <div class="icon-box bg-yellow-100">
-          <i class="fas fa-hourglass-half text-yellow-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Completed Payouts -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="detail-label">Completed Payouts</p>
-          <h3 class="text-3xl font-bold text-blue-700">0</h3>
-        </div>
-        <div class="icon-box bg-blue-100">
-          <i class="fas fa-check-circle text-blue-600 text-xl"></i>
-        </div>
+      <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-wallet text-white text-xl"></i>
       </div>
     </div>
   </div>
 
-  <!-- Payout Form -->
-  <div class="detail-section">
-    <p class="detail-label mb-4">Request New Payout</p>
-    <form class="space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Amount (Rs.)</label>
-          <input type="number" placeholder="Enter payout amount" class="form-control" min="0" step="0.01" max="{{ wallet_balance }}">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Bank Account</label>
-          <select class="form-control">
-            <option>Select Bank Account</option>
-          </select>
-        </div>
-      </div>
+  <!-- Pending Payouts -->
+  <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+    <div class="flex items-center justify-between">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-        <textarea class="form-control" rows="3" placeholder="Add any additional notes"></textarea>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Pending Requests</p>
+        <h3 class="text-2xl font-bold text-yellow-700">0</h3>
+        <p class="text-xs text-gray-600 mt-1">Being processed</p>
       </div>
-      <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-send"></i> Submit Request
-        </button>
-        <button type="reset" class="btn" style="background: #e5e7eb; color: #1f2937">
-          <i class="fas fa-times"></i> Clear
-        </button>
+      <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-hourglass-half text-white text-xl"></i>
       </div>
-    </form>
+    </div>
   </div>
 
-  <!-- Payout History -->
-  <div class="detail-section">
-    <p class="detail-label mb-4">Payout History</p>
-    {% if payout_requests %}
-      <div class="overflow-x-auto">
-        <table id="payoutsTable" class="w-full">
-          <thead class="bg-gray-50 border-b">
-            <tr>
-              <th class="px-4 py-3 text-left">Request ID</th>
-              <th class="px-4 py-3">Amount</th>
-              <th class="px-4 py-3">Bank Account</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Requested Date</th>
-              <th class="px-4 py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for payout in payout_requests %}
-            <tr class="border-b hover:bg-gray-50">
-              <td class="px-4 py-3 font-medium">#{{ payout.id }}</td>
-              <td class="px-4 py-3 font-semibold text-green-700">Rs. {{ payout.amount|floatformat:2 }}</td>
-              <td class="px-4 py-3">{{ payout.bank_account }}</td>
-              <td class="px-4 py-3">
-                <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">{{ payout.status }}</span>
-              </td>
-              <td class="px-4 py-3">{{ payout.created_at|date:"M d, Y" }}</td>
-              <td class="px-4 py-3">
-                <a href="#" class="text-xs text-primary hover:underline">View</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="text-center py-8 text-gray-500">
-        <i class="fas fa-inbox text-3xl mb-2 block text-gray-300"></i>
-        <p>No payout requests yet</p>
-      </div>
-    {% endif %}
-  </div>
-
-  <!-- Info Box -->
-  <div class="detail-section" style="background: #f0fdf4; border-left-color: #10b981; border-left-width: 4px">
-    <div class="flex gap-3">
-      <i class="fas fa-info-circle text-green-600 text-lg mt-1"></i>
+  <!-- Completed Payouts -->
+  <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+    <div class="flex items-center justify-between">
       <div>
-        <p class="font-medium text-gray-900">Payout Information</p>
-        <p class="text-sm text-gray-700 mt-1">Payouts are processed within 5-7 business days. Ensure your bank account details are correct before requesting a payout.</p>
+        <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Completed Payouts</p>
+        <h3 class="text-2xl font-bold text-blue-700">0</h3>
+        <p class="text-xs text-gray-600 mt-1">Successfully transferred</p>
+      </div>
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-check-circle text-white text-xl"></i>
       </div>
     </div>
   </div>
 </div>
 
-{% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script>
-  $(document).ready(function() {
-    if($('#payoutsTable').length) {
-      $('#payoutsTable').DataTable({
-        "order": [[4, "desc"]],
-        "pageLength": 25,
-        "columnDefs": [
-          { "orderable": false, "targets": [5] }
-        ]
-      });
-    }
-  });
-</script>
+<!-- Payout Form -->
+<div class="card mb-6">
+  <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+    <i class="fas fa-paper-plane text-blue-600"></i>
+    Request New Payout
+  </h3>
+  <form class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          <i class="fas fa-money-bill-wave text-gray-400"></i> Amount (Rs.)
+        </label>
+        <input type="number" placeholder="Enter payout amount" class="form-control" min="0" step="0.01" max="{{ wallet_balance }}">
+        <p class="text-xs text-gray-500 mt-1">Maximum: Rs. {{ wallet_balance|floatformat:2 }}</p>
+      </div>
+    
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        <i class="fas fa-comment text-gray-400"></i> Notes (Optional)
+      </label>
+      <textarea class="form-control" rows="3" placeholder="Add any additional notes or instructions"></textarea>
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-send"></i> Submit Request
+      </button>
+      <button type="reset" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Clear Form
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Payout History -->
+<div class="card mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+      <i class="fas fa-history text-blue-600"></i>
+      Payout History
+    </h3>
+    {% if payout_requests %}
+    <span class="text-xs text-gray-500">Total: {{ payout_requests.count }} requests</span>
+    {% endif %}
+  </div>
+  
+  {% if payout_requests %}
+  <div class="overflow-x-auto">
+    <table id="payoutsTable" class="table">
+      <thead>
+        <tr>
+          <th>Request ID</th>
+          <th>Amount</th>
+          <th>Bank Account</th>
+          <th>Payment Method</th>
+          <th>Status</th>
+          <th>Requested Date</th>
+          <th>Processed Date</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payout in payout_requests %}
+        <tr>
+          <td class="font-medium text-primary">#{{ payout.id }}</td>
+          <td class="font-semibold text-green-700">Rs. {{ payout.amount|floatformat:2 }}</td>
+          <td>
+            <div class="font-medium text-gray-700">{{ payout.bank_account }}</div>
+            {% if payout.account_number %}
+            <div class="text-xs text-gray-500">****{{ payout.account_number|slice:"-4:" }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-info">
+              <i class="fas fa-university"></i> Bank Transfer
+            </span>
+          </td>
+          <td>
+            <span class="badge {% if payout.status == 'completed' %}badge-success{% elif payout.status == 'pending' %}badge-warning{% elif payout.status == 'rejected' %}badge-danger{% else %}badge-secondary{% endif %}">
+              {% if payout.status == 'completed' %}
+                <i class="fas fa-check-circle"></i>
+              {% elif payout.status == 'pending' %}
+                <i class="fas fa-hourglass-half"></i>
+              {% elif payout.status == 'rejected' %}
+                <i class="fas fa-times-circle"></i>
+              {% endif %}
+              {{ payout.status|title }}
+            </span>
+          </td>
+          <td>
+            <div class="text-sm text-gray-700">{{ payout.created_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ payout.created_at|time:"H:i" }}</div>
+          </td>
+          <td>
+            {% if payout.processed_at %}
+            <div class="text-sm text-gray-700">{{ payout.processed_at|date:"M d, Y" }}</div>
+            <div class="text-xs text-gray-500">{{ payout.processed_at|time:"H:i" }}</div>
+            {% else %}
+            <span class="text-xs text-gray-400">Not processed yet</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if payout.notes %}
+            <div class="text-xs text-gray-600 max-w-xs truncate" title="{{ payout.notes }}">{{ payout.notes }}</div>
+            {% else %}
+            <span class="text-xs text-gray-400">No notes</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <a href="#" class="btn btn-info btn-sm" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-12 text-gray-500">
+    <i class="fas fa-inbox text-5xl mb-3 text-gray-300"></i>
+    <p class="font-medium text-lg">No payout requests yet</p>
+    <p class="text-sm text-gray-400 mt-1">Submit your first payout request using the form above</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Info Box -->
+<div class="card bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 border-l-4">
+  <div class="flex gap-3">
+    <i class="fas fa-info-circle text-green-600 text-2xl"></i>
+    <div>
+      <h4 class="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+        Payout Information
+      </h4>
+      <ul class="text-sm text-gray-700 space-y-1">
+        <li class="flex items-start gap-2">
+          <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+          <span>Payouts are processed within <strong>5-7 business days</strong></span>
+        </li>
+      
+        <li class="flex items-start gap-2">
+          <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+          <span>Minimum payout amount: <strong>Rs. 500</strong></span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+          <span>Processing fee may apply for amounts below Rs. 1,000</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize DataTable with search enabled (if table exists)
+  if ($('#payoutsTable').length) {
+    $('#payoutsTable').DataTable({
+      pageLength: 25,
+      order: [[5, 'desc']], // Sort by requested date
+      responsive: true,
+      searching: true, // Enable search
+      language: {
+        emptyTable: "No payout requests found",
+        info: "Showing _START_ to _END_ of _TOTAL_ requests",
+        infoEmpty: "Showing 0 to 0 of 0 requests",
+        infoFiltered: "(filtered from _MAX_ total requests)",
+        search: "Search:",
+        searchPlaceholder: "Search payouts..."
+      },
+      columnDefs: [
+        { orderable: false, targets: [8] } // Disable sorting for actions
+      ]
+    });
+  }
+});
+</script>
 {% endblock %}

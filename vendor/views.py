@@ -13,7 +13,7 @@ from decimal import Decimal
 from agroEcommerce.models import (
     Order, Farmer, Vendor, FarmerProduct, VendorProduct, 
     Category, AdminWallet, FarmerPayoutRequest, VendorPayoutRequest,
-    AuditLog, UserRole,Review,CommissionRate,Organization
+    AuditLog, UserRole,Review,CommissionRate,Organization,Notification
 )
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -151,7 +151,7 @@ def vendor_browse_warehouse(request):
     total_products = farmer_products.count()
     total_quantity = farmer_products.aggregate(Sum('available_quantity'))['available_quantity__sum'] or Decimal('0.00')
     context = {'farmer_products': farmer_products, 'total_products': total_products, 'total_quantity': total_quantity}
-    return render(request, 'vendor_pages/browse_warehouse.html', context)
+    return render(request, 'vendor_pages/warehouse/browse_warehouse.html', context)
 
 
 @login_required
@@ -262,20 +262,109 @@ def vendor_finance_earnings(request):
 # --- Reviews / Notifications / Settings / Profile ---
 @login_required
 def vendor_reviews(request):
-    return render(request, 'vendor_pages/reviews.html')
+    user=request.user
+    vendor=Vendor.objects.get(user=user)
+    review=Review.objects.filter(vendor_product__vendor=vendor).order_by('-created_at')
+    average_rating=review.aggregate(Avg('rating'))['rating__avg'] or 0
+    five_star_count=review.filter(rating=5).count()
+    month=timezone.now().month
+    monthly_reviews=review.filter(created_at__month=month).count()
+    return render(request, 'vendor_pages/review/reviews.html',{'reviews':review,'average_rating':average_rating,'five_star_count':five_star_count,'monthly_reviews':monthly_reviews})
 
 
 @login_required
 def vendor_notifications(request):
-    return render(request, 'vendor_pages/notifications.html')
+    vendor_notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    total_unread = vendor_notifications.filter(is_read=False).count()
+    return render(request, 'vendor_pages/notification/notifications.html',{'notifications': vendor_notifications,'total_unread': total_unread})
 
 
 @login_required
 def vendor_shop_settings(request):
-    return render(request, 'vendor_pages/settings/shop_settings.html')
+    vendor = getattr(request.user, 'vendor', None)
+    if not vendor:
+        messages.error(request, 'Vendor profile not found')
+        return redirect('vendor_dashboard_page')
 
+    if request.method == 'POST':
+        # Basic fields
+        vendor.shop_name = request.POST.get('shop_name', vendor.shop_name)
+        vendor.description = request.POST.get('description', vendor.description)
+        vendor.phone = request.POST.get('phone', vendor.phone)
+        vendor.address = request.POST.get('address', vendor.address)
+        vendor.city = request.POST.get('city', vendor.city)
+        vendor.province = request.POST.get('province', vendor.province)
+
+        # Handle optional logo upload
+        if request.FILES.get('shop_logo'):
+            vendor.shop_logo = request.FILES.get('shop_logo')
+
+        try:
+            vendor.save()
+            messages.success(request, 'Shop settings updated successfully')
+            return redirect('vendor_shop_settings')
+        except Exception as e:
+            messages.error(request, f'Error saving settings: {e}')
+    
+    context = {'vendor': vendor,'provinces':Vendor.PROVINCE_CHOICES}
+    return render(request, 'vendor_pages/settings/shop_settings.html', context)
+
+
+from django.contrib.auth import update_session_auth_hash
 
 @login_required
 def vendor_profile(request):
-    return render(request, 'vendor_pages/profile.html')
-
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+        
+        # Profile Update
+        if form_type == 'profile':
+            try:
+                # Update User fields
+                request.user.first_name = request.POST.get('first_name', '')
+                request.user.last_name = request.POST.get('last_name', '')
+                request.user.email = request.POST.get('email', '')
+                request.user.save()
+                
+                # Update Profile fields
+                profile = request.user.profile
+                profile.phone = request.POST.get('phone', '')
+                profile.gender = request.POST.get('gender', '')
+                profile.address = request.POST.get('address', '')
+                profile.city = request.POST.get('city', '')
+                profile.province = request.POST.get('province', '')
+                
+                # Handle avatar upload
+                if request.FILES.get('avatar'):
+                    profile.avatar = request.FILES.get('avatar')
+                
+                profile.save()
+                messages.success(request, 'Profile updated successfully!')
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {e}')
+            
+            return redirect('vendor_profile')
+        
+        # Password Change
+        elif form_type == 'password':
+            old_password = request.POST.get('old_password')
+            new_password1 = request.POST.get('new_password1')
+            new_password2 = request.POST.get('new_password2')
+            
+            # Validate passwords
+            if not request.user.check_password(old_password):
+                messages.error(request, 'Current password is incorrect')
+            elif new_password1 != new_password2:
+                messages.error(request, 'New passwords do not match')
+            else:
+                try:
+                    request.user.set_password(new_password1)
+                    request.user.save()
+                    update_session_auth_hash(request, request.user)
+                    messages.success(request, 'Password changed successfully!')
+                except Exception as e:
+                    messages.error(request, f'Error changing password: {e}')
+            
+            return redirect('vendor_profile')
+    
+    return render(request, 'vendor_pages/profile.html', {'provinces': Vendor.PROVINCE_CHOICES})

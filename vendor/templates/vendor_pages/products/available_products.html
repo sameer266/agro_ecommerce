@@ -1,131 +1,306 @@
 {% extends 'components/base.html' %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-<style>
-  .stat-card { background: white; border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1.5rem; border-left: 4px solid #3b82f6 }
-  .stat-card.green { border-left-color: #10b981 }
-  .stat-card.yellow { border-left-color: #f59e0b }
-  .icon-box { width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; border-radius: 50% }
-</style>
-{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="p-6">
-  <div class="mb-6">
-    <div class="flex items-start justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-          <i class="fas fa-check-circle text-green-600"></i> Available Products
-        </h1>
-        <p class="text-sm text-gray-600 mt-1">Products available for customer purchase</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Statistics Overview -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-    <!-- Total Products -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600 mb-1">Available Products</p>
-          <h3 class="text-3xl font-bold text-blue-700">{{ total_products }}</h3>
-        </div>
-        <div class="icon-box bg-blue-100">
-          <i class="fas fa-box text-blue-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Total Quantity -->
-    <div class="stat-card green">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600 mb-1">Total Stock</p>
-          <h3 class="text-3xl font-bold text-green-700">{{ total_available|floatformat:0 }} kg</h3>
-        </div>
-        <div class="icon-box bg-green-100">
-          <i class="fas fa-warehouse text-green-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Available Quantity -->
-    <div class="stat-card yellow">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600 mb-1">Ready to Ship</p>
-          <h3 class="text-3xl font-bold text-yellow-700">{{ total_quantity|floatformat:0 }} kg</h3>
-        </div>
-        <div class="icon-box bg-yellow-100">
-          <i class="fas fa-shipping-fast text-yellow-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Products Table -->
-  <div class="bg-white shadow rounded">
-    <div class="overflow-x-auto">
-      <table id="productsTable" class="w-full">
-        <thead class="bg-gray-50 border-b">
-          <tr>
-            <th class="px-4 py-3 text-left">Product</th>
-            <th class="px-4 py-3">Farmer</th>
-            <th class="px-4 py-3">Price/kg</th>
-            <th class="px-4 py-3">Stock Available</th>
-            <th class="px-4 py-3">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in products %}
-          <tr class="border-b hover:bg-gray-50">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-3">
-                {% if p.farmer_product.image %}
-                <img src="{{ p.farmer_product.image.url }}" alt="{{ p.farmer_product.name }}" class="w-10 h-10 object-cover rounded">
-                {% else %}
-                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                  <i class="fas fa-image text-gray-400 text-sm"></i>
-                </div>
-                {% endif %}
-                <div>
-                  <a href="{% url 'vendor_product_detail' p.pk %}" class="font-medium text-primary hover:underline">{{ p.farmer_product.name }}</a>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-3 text-sm">{{ p.farmer_product.farmer.farm_name }}</td>
-            <td class="px-4 py-3 font-medium">Rs. {{ p.selling_price|floatformat:2 }}</td>
-            <td class="px-4 py-3 text-center">
-              <span class="text-sm font-medium text-green-700">{{ p.available_quantity }} kg</span>
-            </td>
-            <td class="px-4 py-3">
-              <a href="{% url 'vendor_product_detail' p.pk %}" class="text-xs text-primary hover:underline">View</a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="5" class="p-6 text-center text-gray-500">No available products</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+        <i class="fas fa-check-circle text-green-600"></i>
+        Available Products
+      </h1>
+      <p class="text-sm text-gray-500">Products available for customer purchase</p>
     </div>
   </div>
 </div>
 
-{% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script>
-  $(document).ready(function() {
-    $('#productsTable').DataTable({
-      "order": [[3, "desc"]],
-      "pageLength": 25,
-      "columnDefs": [
-        { "orderable": false, "targets": [4] }
-      ]
-    });
-  });
-</script>
+<!-- Statistics Overview -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+  <!-- Available Products -->
+  <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Available Products</p>
+        <h3 class="text-2xl font-bold text-blue-700">{{ total_products }}</h3>
+      </div>
+      <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-box text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Stock -->
+  <div class="card bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Total Stock</p>
+        <h3 class="text-2xl font-bold text-green-700">
+          {{ total_available|default:0|floatformat:0 }} kg
+        </h3>
+      </div>
+      <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-warehouse text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ready to Ship -->
+  <div class="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm text-gray-600 mb-1">Ready to Ship</p>
+        <h3 class="text-2xl font-bold text-yellow-700">
+          {{ total_quantity|default:0|floatformat:0 }} kg
+        </h3>
+      </div>
+      <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+        <i class="fas fa-shipping-fast text-white text-xl"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Advanced Filters -->
+<div class="card mb-4">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+      <i class="fas fa-filter text-blue-600"></i>
+      Advanced Filters
+    </h3>
+    <button id="resetBtn" class="btn btn-secondary btn-sm">
+      <i class="fas fa-redo"></i> Reset All
+    </button>
+  </div>
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <!-- Product Name Filter -->
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">
+        <i class="fas fa-search"></i> Product Name
+      </label>
+      <input type="text" id="productFilter" class="form-control" placeholder="Search product...">
+    </div>
+
+    <!-- Farmer Filter -->
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">
+        <i class="fas fa-tractor"></i> Farmer
+      </label>
+      <input type="text" id="farmerFilter" class="form-control" placeholder="Search farmer...">
+    </div>
+
+    <!-- Price Range Filter -->
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">
+        <i class="fas fa-dollar-sign"></i> Price Range
+      </label>
+      <select id="priceFilter" class="form-control">
+        <option value="">All Prices</option>
+        <option value="0-50">Rs. 0 - 50</option>
+        <option value="51-100">Rs. 51 - 100</option>
+        <option value="101-200">Rs. 101 - 200</option>
+        <option value="201-500">Rs. 201 - 500</option>
+        <option value="501+">Rs. 501+</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Products Table -->
+<div class="card">
+  <div class="overflow-x-auto">
+    <table id="productsTable" class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Image</th>
+          <th>Product</th>
+          <th>Farmer</th>
+          <th>Category</th>
+          <th>Quality</th>
+          <th>Price/kg</th>
+          <th>Stock Available</th>
+          <th>Total Value</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr data-price="{{ p.selling_price }}">
+          <td class="font-medium text-primary">#{{ p.id }}</td>
+          
+          <!-- Image -->
+          <td>
+            {% if p.farmer_product.image %}
+            <img src="{{ p.farmer_product.image.url }}" alt="{{ p.farmer_product.name }}" class="w-12 h-12 object-cover rounded">
+            {% else %}
+            <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+              <i class="fas fa-image text-gray-400"></i>
+            </div>
+            {% endif %}
+          </td>
+          
+          <!-- Product -->
+          <td>
+            <div class="font-medium text-gray-800">{{ p.farmer_product.name }}</div>
+            {% if p.farmer_product.description %}
+            <div class="text-xs text-gray-500 max-w-xs truncate">{{ p.farmer_product.description }}</div>
+            {% endif %}
+          </td>
+          
+          <!-- Farmer -->
+          <td>
+            <div class="font-medium text-gray-700">
+              {{ p.farmer_product.farmer.farm_name }}
+            </div>
+            <div class="text-xs text-gray-500">
+              {{ p.farmer_product.farmer.user.get_full_name|default:p.farmer_product.farmer.user.username }}
+            </div>
+            <div class="text-xs text-gray-400">
+              <i class="fas fa-map-marker-alt"></i> {{ p.farmer_product.farmer.city }}
+            </div>
+          </td>
+          
+          <!-- Category -->
+          <td>
+            {% if p.farmer_product.category %}
+            <span class="badge badge-info">{{ p.farmer_product.category.name }}</span>
+            {% else %}
+            <span class="text-gray-400 text-xs">No Category</span>
+            {% endif %}
+          </td>
+          
+          <!-- Quality -->
+          <td>
+            <span class="badge {% if p.farmer_product.quality == 'A' %}badge-success{% elif p.farmer_product.quality == 'B' %}badge-warning{% else %}badge-secondary{% endif %}">
+              {{ p.farmer_product.get_quality_display }}
+            </span>
+          </td>
+          
+          <!-- Price -->
+          <td class="font-semibold text-primary">Rs. {{ p.selling_price|floatformat:2 }}</td>
+          
+          <!-- Stock Available -->
+          <td class="font-semibold text-center text-green-600">
+            {{ p.available_quantity|floatformat:1 }} kg
+            {% if p.available_quantity > 50 %}
+            <div class="text-xs text-green-500 mt-1">
+              <i class="fas fa-check-circle"></i> In Stock
+            </div>
+            {% elif p.available_quantity > 20 %}
+            <div class="text-xs text-yellow-500 mt-1">
+              <i class="fas fa-exclamation-circle"></i> Low Stock
+            </div>
+            {% else %}
+            <div class="text-xs text-orange-500 mt-1">
+              <i class="fas fa-exclamation-triangle"></i> Very Low
+            </div>
+            {% endif %}
+          </td>
+          
+          <!-- Total Value -->
+          <td class="font-semibold text-gray-800">
+            Rs. {% widthratio p.selling_price 1 p.available_quantity %}
+          </td>
+          
+          <!-- Actions -->
+          <td>
+            <div class="flex gap-2">
+              <a href="{% url 'vendor_product_detail' p.pk %}" class="btn btn-info btn-sm" title="View Details">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center text-gray-500 py-8">
+            <i class="fas fa-box-open text-4xl mb-2 text-gray-300"></i>
+            <p class="font-medium">No available products found</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize DataTable
+  const table = $('#productsTable').DataTable({
+    pageLength: 25,
+    order: [[7, 'desc']], // Sort by stock available
+    responsive: true,
+    language: {
+      emptyTable: "No available products found",
+      info: "Showing _START_ to _END_ of _TOTAL_ products",
+      infoEmpty: "Showing 0 to 0 of 0 products",
+      infoFiltered: "(filtered from _MAX_ total products)",
+    },
+    columnDefs: [
+      { orderable: false, targets: [1, 9] } // Disable sorting for image and actions
+    ]
+  });
+
+  // Product name filter
+  $('#productFilter').on('keyup', function() {
+    table.column(2).search(this.value).draw();
+  });
+
+  // Farmer filter
+  $('#farmerFilter').on('keyup', function() {
+    table.column(3).search(this.value).draw();
+  });
+
+  // Price range filter
+  $('#priceFilter').on('change', function() {
+    const value = this.value;
+    
+    if (value === '') {
+      // Show all
+      $.fn.dataTable.ext.search.pop();
+    } else {
+      // Remove any existing custom filter
+      $.fn.dataTable.ext.search.pop();
+      
+      // Add new filter
+      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        const price = parseFloat($(table.row(dataIndex).node()).attr('data-price'));
+        
+        if (value === '0-50') {
+          return price >= 0 && price <= 50;
+        } else if (value === '51-100') {
+          return price >= 51 && price <= 100;
+        } else if (value === '101-200') {
+          return price >= 101 && price <= 200;
+        } else if (value === '201-500') {
+          return price >= 201 && price <= 500;
+        } else if (value === '501+') {
+          return price >= 501;
+        }
+        return true;
+      });
+    }
+    
+    table.draw();
+  });
+
+  // Reset filters
+  $('#resetBtn').on('click', function() {
+    $('#productFilter, #farmerFilter').val('');
+    $('#priceFilter').val('');
+    
+    // Remove custom price filter
+    if ($.fn.dataTable.ext.search.length > 0) {
+      $.fn.dataTable.ext.search.pop();
+    }
+    
+    table.search('').columns().search('').draw();
+  });
+});
+</script>
 {% endblock %}
